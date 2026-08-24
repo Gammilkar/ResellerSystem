@@ -107,7 +107,7 @@ public static class StartupChecks
 
         await authService.CreateInitialAdminAsync(username, password, ct);
 
-        var configDir = Path.Combine(Path.GetDirectoryName(fileStorage.StorageRoot) ?? fileStorage.StorageRoot, "..", "config");
+        var configDir = Path.Combine(Path.GetDirectoryName(fileStorage.StorageRoot) ?? fileStorage.StorageRoot, "config");
         configDir = Path.GetFullPath(configDir);
         Directory.CreateDirectory(configDir);
 
