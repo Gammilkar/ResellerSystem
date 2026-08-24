@@ -1,0 +1,10 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ResellerSystem.Desktop.ViewModels"
+        x:Class="ResellerSystem.Desktop.App.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="Reseller System"
+        Width="720" Height="520"
+        MinWidth="560" MinHeight="420">
+    <ContentControl Content="{Binding CurrentViewModel}" Margin="24" />
+</Window>

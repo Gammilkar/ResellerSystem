@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ResellerSystem.Desktop.ServerManager</RootNamespace>
+    <!-- Windows-only by design: manages local Windows Services (sc.exe /
+         ServiceController), which have no meaning on macOS/Linux. The
+         cross-platform Desktop.App (Avalonia) is the actual business client. -->
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Domain.Shared\Domain.Shared.csproj" />
+    <ProjectReference Include="..\Desktop.Services\Desktop.Services.csproj" />
+  </ItemGroup>
+</Project>

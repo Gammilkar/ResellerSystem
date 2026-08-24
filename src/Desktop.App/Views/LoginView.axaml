@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ResellerSystem.Desktop.ViewModels"
+             x:Class="ResellerSystem.Desktop.App.Views.LoginView"
+             x:DataType="vm:LoginViewModel">
+    <StackPanel Spacing="12" MaxWidth="360" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <TextBlock Text="Sign In" FontSize="22" FontWeight="Bold" />
+
+        <TextBlock Text="Username" />
+        <TextBox Text="{Binding Username}" />
+
+        <TextBlock Text="Password" />
+        <TextBox Text="{Binding Password}" PasswordChar="*" />
+
+        <Button Content="Sign In" Command="{Binding LoginCommand}" IsEnabled="{Binding !IsLoggingIn}" HorizontalAlignment="Left" />
+        <Button Content="Change Server" Command="{Binding ChangeServerCommand}" HorizontalAlignment="Left" />
+
+        <TextBlock Text="{Binding ErrorMessage}" Foreground="Red"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                    TextWrapping="Wrap" />
+    </StackPanel>
+</UserControl>

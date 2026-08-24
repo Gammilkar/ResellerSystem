@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ResellerSystem.Server.Api</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.9.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Server.Application\Server.Application.csproj" />
+    <ProjectReference Include="..\Server.Data\Server.Data.csproj" />
+    <ProjectReference Include="..\Server.FileStorage\Server.FileStorage.csproj" />
+    <ProjectReference Include="..\Server.Infrastructure\Server.Infrastructure.csproj" />
+    <ProjectReference Include="..\Domain.Shared\Domain.Shared.csproj" />
+    <ProjectReference Include="..\Server.Modules.Abstractions\Server.Modules.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

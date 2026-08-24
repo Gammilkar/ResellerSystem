@@ -1,0 +1,27 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ResellerSystem.Desktop.ViewModels"
+             x:Class="ResellerSystem.Desktop.App.Views.CreateDatabaseView"
+             x:DataType="vm:CreateDatabaseViewModel">
+    <StackPanel Spacing="12" MaxWidth="420" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <TextBlock Text="Create Database" FontSize="22" FontWeight="Bold" />
+
+        <TextBlock Text="Name" />
+        <TextBox Text="{Binding Name}" Watermark="Main Business" />
+
+        <TextBlock Text="Time Zone" />
+        <TextBox Text="{Binding TimeZone}" Watermark="America/Los_Angeles" />
+
+        <TextBlock Text="Currency" />
+        <TextBox Text="{Binding Currency}" Watermark="USD" />
+
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Save" Command="{Binding SaveCommand}" IsEnabled="{Binding !IsSaving}" />
+            <Button Content="Cancel" Command="{Binding CancelCommand}" />
+        </StackPanel>
+
+        <TextBlock Text="{Binding ErrorMessage}" Foreground="Red"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                    TextWrapping="Wrap" />
+    </StackPanel>
+</UserControl>

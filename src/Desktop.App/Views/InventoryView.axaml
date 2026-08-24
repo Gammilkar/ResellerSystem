@@ -1,0 +1,78 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ResellerSystem.Desktop.ViewModels"
+             xmlns:dto="using:ResellerSystem.Domain.Shared.Dto"
+             x:Class="ResellerSystem.Desktop.App.Views.InventoryView"
+             x:DataType="vm:InventoryViewModel">
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
+            <TextBlock Text="Inventory" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" />
+            <Button Content="Refresh" Command="{Binding LoadCommand}" />
+            <Button Content="Back" Command="{Binding BackCommand}" />
+        </StackPanel>
+
+        <TextBlock DockPanel.Dock="Top" Text="{Binding ErrorMessage}" Foreground="Red"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                    Margin="0,0,0,8" />
+
+        <Border DockPanel.Dock="Top" BorderBrush="Gray" BorderThickness="1" Padding="12" Margin="0,0,0,16">
+            <StackPanel Spacing="6">
+                <TextBlock Text="New Purchase" FontWeight="Bold" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <StackPanel>
+                        <TextBlock Text="Source" FontSize="11" />
+                        <TextBox Text="{Binding NewSourceName}" Width="160" />
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="Total Amount" FontSize="11" />
+                        <TextBox Text="{Binding NewTotalAmount}" Width="100" />
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="Item Name" FontSize="11" />
+                        <TextBox Text="{Binding NewItemName}" Width="160" />
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="Quantity" FontSize="11" />
+                        <TextBox Text="{Binding NewQuantity}" Width="60" />
+                    </StackPanel>
+                    <Button Content="Add Purchase" Command="{Binding CreatePurchaseCommand}"
+                            IsEnabled="{Binding !IsSavingPurchase}" VerticalAlignment="Bottom" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,*">
+            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                <TextBlock Text="Purchases" FontWeight="Bold" Margin="0,0,0,4" />
+                <ListBox ItemsSource="{Binding Purchases}" Height="300">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="dto:PurchaseDto">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{Binding PurchaseDate}" Width="90" />
+                                <TextBlock Text="{Binding SourceName}" Width="120" />
+                                <TextBlock Text="{Binding TotalAmount, StringFormat='{}{0:C}'}" Width="80" />
+                                <TextBlock Text="{Binding ItemCount, StringFormat='{}{0} items'}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1">
+                <TextBlock Text="Items" FontWeight="Bold" Margin="0,0,0,4" />
+                <ListBox ItemsSource="{Binding Items}" Height="300">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="dto:ItemDto">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{Binding ItemNumber}" Width="50" />
+                                <TextBlock Text="{Binding Name}" Width="140" />
+                                <TextBlock Text="{Binding Status}" Width="90" />
+                                <TextBlock Text="{Binding EffectiveCostBasis, StringFormat='{}{0:C}'}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </StackPanel>
+        </Grid>
+    </DockPanel>
+</UserControl>

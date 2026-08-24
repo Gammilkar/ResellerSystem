@@ -1,0 +1,172 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.0.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain.Shared", "src\Domain.Shared\Domain.Shared.csproj", "{10000000-0000-0000-0000-000000000001}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server.Domain", "src\Server.Domain\Server.Domain.csproj", "{10000000-0000-0000-0000-000000000002}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server.Modules.Abstractions", "src\Server.Modules.Abstractions\Server.Modules.Abstractions.csproj", "{10000000-0000-0000-0000-00000000000D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server.Updater", "src\Server.Updater\Server.Updater.csproj", "{10000000-0000-0000-0000-00000000000E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Modules.Inventory", "src\Modules.Inventory\Modules.Inventory.csproj", "{10000000-0000-0000-0000-00000000000F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Modules.Sales", "src\Modules.Sales\Modules.Sales.csproj", "{10000000-0000-0000-0000-000000000010}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Modules.Expenses", "src\Modules.Expenses\Modules.Expenses.csproj", "{10000000-0000-0000-0000-000000000011}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Modules.Documents", "src\Modules.Documents\Modules.Documents.csproj", "{10000000-0000-0000-0000-000000000012}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Modules.Reports", "src\Modules.Reports\Modules.Reports.csproj", "{10000000-0000-0000-0000-000000000013}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Modules.Import", "src\Modules.Import\Modules.Import.csproj", "{10000000-0000-0000-0000-000000000014}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server.Application", "src\Server.Application\Server.Application.csproj", "{10000000-0000-0000-0000-000000000003}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server.Infrastructure", "src\Server.Infrastructure\Server.Infrastructure.csproj", "{10000000-0000-0000-0000-000000000004}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server.Data", "src\Server.Data\Server.Data.csproj", "{10000000-0000-0000-0000-000000000005}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server.FileStorage", "src\Server.FileStorage\Server.FileStorage.csproj", "{10000000-0000-0000-0000-000000000006}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server.Api", "src\Server.Api\Server.Api.csproj", "{10000000-0000-0000-0000-000000000007}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server.Host", "src\Server.Host\Server.Host.csproj", "{10000000-0000-0000-0000-000000000008}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Desktop.App", "src\Desktop.App\Desktop.App.csproj", "{10000000-0000-0000-0000-000000000009}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Desktop.ViewModels", "src\Desktop.ViewModels\Desktop.ViewModels.csproj", "{10000000-0000-0000-0000-00000000000A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Desktop.Services", "src\Desktop.Services\Desktop.Services.csproj", "{10000000-0000-0000-0000-00000000000B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Desktop.ServerManager", "src\Desktop.ServerManager\Desktop.ServerManager.csproj", "{10000000-0000-0000-0000-00000000000C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server.Domain.Tests", "tests\Server.Domain.Tests\Server.Domain.Tests.csproj", "{20000000-0000-0000-0000-000000000001}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server.Application.Tests", "tests\Server.Application.Tests\Server.Application.Tests.csproj", "{20000000-0000-0000-0000-000000000002}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server.Api.Tests", "tests\Server.Api.Tests\Server.Api.Tests.csproj", "{20000000-0000-0000-0000-000000000003}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server.Data.Tests", "tests\Server.Data.Tests\Server.Data.Tests.csproj", "{20000000-0000-0000-0000-000000000004}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Modules.Inventory.Tests", "tests\Modules.Inventory.Tests\Modules.Inventory.Tests.csproj", "{20000000-0000-0000-0000-000000000005}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Modules.Sales.Tests", "tests\Modules.Sales.Tests\Modules.Sales.Tests.csproj", "{20000000-0000-0000-0000-000000000006}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{10000000-0000-0000-0000-000000000001}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000001}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000001}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-000000000001}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-000000000002}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000002}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000002}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-000000000002}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-000000000003}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000003}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000003}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-000000000003}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-000000000004}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000004}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000004}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-000000000004}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-000000000005}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000005}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000005}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-000000000005}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-000000000006}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000006}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000006}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-000000000006}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-000000000007}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000007}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000007}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-000000000007}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-000000000008}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000008}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000008}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-000000000008}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-000000000009}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000009}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000009}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-000000000009}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-00000000000A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-00000000000A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-00000000000A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-00000000000A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-00000000000B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-00000000000B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-00000000000B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-00000000000B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-00000000000C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-00000000000C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-00000000000C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-00000000000C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-00000000000D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-00000000000D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-00000000000D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-00000000000D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-00000000000E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-00000000000E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-00000000000E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-00000000000E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-00000000000F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-00000000000F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-00000000000F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-00000000000F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-000000000010}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000010}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000010}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-000000000010}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-000000000011}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000011}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000011}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-000000000011}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-000000000012}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000012}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000012}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-000000000012}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-000000000013}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000013}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000013}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-000000000013}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000000-0000-0000-0000-000000000014}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000014}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000000-0000-0000-0000-000000000014}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000000-0000-0000-0000-000000000014}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20000000-0000-0000-0000-000000000001}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20000000-0000-0000-0000-000000000001}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20000000-0000-0000-0000-000000000001}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20000000-0000-0000-0000-000000000001}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20000000-0000-0000-0000-000000000002}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20000000-0000-0000-0000-000000000002}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20000000-0000-0000-0000-000000000002}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20000000-0000-0000-0000-000000000002}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20000000-0000-0000-0000-000000000003}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20000000-0000-0000-0000-000000000003}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20000000-0000-0000-0000-000000000003}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20000000-0000-0000-0000-000000000003}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20000000-0000-0000-0000-000000000004}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20000000-0000-0000-0000-000000000004}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20000000-0000-0000-0000-000000000004}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20000000-0000-0000-0000-000000000004}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20000000-0000-0000-0000-000000000005}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20000000-0000-0000-0000-000000000005}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20000000-0000-0000-0000-000000000005}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20000000-0000-0000-0000-000000000005}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20000000-0000-0000-0000-000000000006}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20000000-0000-0000-0000-000000000006}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20000000-0000-0000-0000-000000000006}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20000000-0000-0000-0000-000000000006}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ResellerSystem.Desktop.ViewModels"
+             x:Class="ResellerSystem.Desktop.App.Views.InitialSetupView"
+             x:DataType="vm:InitialSetupViewModel">
+    <StackPanel Spacing="12" MaxWidth="380" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <TextBlock Text="Create Admin Account" FontSize="22" FontWeight="Bold" />
+        <TextBlock Text="This server has no admin account yet. Create one to continue."
+                    TextWrapping="Wrap" Opacity="0.8" />
+
+        <TextBlock Text="Username" />
+        <TextBox Text="{Binding Username}" />
+
+        <TextBlock Text="Password" />
+        <TextBox Text="{Binding Password}" PasswordChar="*" />
+
+        <TextBlock Text="Confirm Password" />
+        <TextBox Text="{Binding ConfirmPassword}" PasswordChar="*" />
+
+        <Button Content="Create Account" Command="{Binding CreateAccountCommand}" IsEnabled="{Binding !IsSaving}" HorizontalAlignment="Left" />
+
+        <TextBlock Text="{Binding ErrorMessage}" Foreground="Red"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                    TextWrapping="Wrap" />
+    </StackPanel>
+</UserControl>

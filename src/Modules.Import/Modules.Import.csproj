@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ResellerSystem.Modules.Import</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Server.Modules.Abstractions\Server.Modules.Abstractions.csproj" />
+    <ProjectReference Include="..\Server.Application\Server.Application.csproj" />
+    <ProjectReference Include="..\Server.Data\Server.Data.csproj" />
+    <ProjectReference Include="..\Domain.Shared\Domain.Shared.csproj" />
+    <!-- Deliberate exception to "modules don't reference each other":
+         Import's entire purpose is writing into another module's data
+         (unlike Reports' read-only aggregation or Sales' read-only cost
+         basis lookup, both of which use raw cross-module SQL reads
+         instead). Depending directly on Modules.Inventory's service here
+         is the correct design for that, not a workaround — see
+         ImportModule.cs and KNOWN_LIMITATIONS.md "Import module scope". -->
+    <ProjectReference Include="..\Modules.Inventory\Modules.Inventory.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Migrations\Scripts\**\*.sql" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,25 @@
+# Local development PostgreSQL only. The application server itself
+# (Server.Host) runs directly on Windows via `dotnet run` / as a Windows
+# Service — it is NOT containerized, per the architecture's local-first,
+# non-enterprise-overengineering principle.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: reseller-system-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_dev_password
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - reseller_system_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  reseller_system_pgdata:

@@ -1,0 +1,30 @@
+# Build output
+bin/
+obj/
+*.user
+
+# Secrets — never commit real credentials
+**/appsettings.Production.json
+**/appsettings.*.local.json
+
+# Build outputs / packaging
+dist/
+artifacts/
+redist/*.zip
+
+# Local data (storage/backups/logs generated at runtime)
+**/data/
+**/logs/
+
+# Plaintext initial admin credentials generated on first startup
+**/config/initial-admin-credentials.txt
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.suo
+
+# OS
+.DS_Store
+Thumbs.db

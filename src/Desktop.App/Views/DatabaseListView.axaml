@@ -1,0 +1,31 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ResellerSystem.Desktop.ViewModels"
+             xmlns:dto="using:ResellerSystem.Domain.Shared.Dto"
+             x:Class="ResellerSystem.Desktop.App.Views.DatabaseListView"
+             x:DataType="vm:DatabaseListViewModel">
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,16">
+            <TextBlock Text="Databases" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" />
+            <Button Content="Create" Command="{Binding CreateNewCommand}" />
+            <Button Content="Refresh" Command="{Binding LoadCommand}" />
+            <Button Content="Change Server" Command="{Binding ChangeServerCommand}" />
+        </StackPanel>
+
+        <TextBlock DockPanel.Dock="Top" Text="{Binding ErrorMessage}" Foreground="Red"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+        <ListBox ItemsSource="{Binding Databases}" SelectedItem="{Binding Selected}" DoubleTapped="OnDoubleTapped">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="dto:DatabaseProfileDto">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Width="220" />
+                        <TextBlock Text="{Binding Status}" Width="120" />
+                        <TextBlock Text="{Binding TimeZone}" Width="180" />
+                        <TextBlock Text="{Binding Currency}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </DockPanel>
+</UserControl>

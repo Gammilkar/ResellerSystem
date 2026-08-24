@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ResellerSystem.Server.Updater</RootNamespace>
+    <!-- Deliberately a standalone console app with almost no project
+         references (not even Server.Application) — it must be able to run
+         even if the version it's updating FROM or TO has a broken DI graph.
+         It only knows: file system operations, sc.exe, and HTTP GET to
+         /health. Keeping it minimal is a safety property, not a shortcut. -->
+  </PropertyGroup>
+</Project>

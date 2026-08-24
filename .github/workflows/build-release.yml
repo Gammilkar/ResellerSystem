@@ -1,0 +1,165 @@
+name: Build Release
+
+# Runs automatically on every push to main, and manually via the "Run workflow"
+# button in the GitHub Actions tab. Produces the same artifacts as
+# build/build-release.ps1 (Windows) and build/build-macos.sh (macOS) — but
+# executed on GitHub's own runners, which have full internet access and
+# .NET 8 SDK / Inno Setup preinstalled. Nobody needs to install anything
+# locally to get installer files out of this.
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 0.1.0)'
+        required: true
+        default: '0.1.0'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Determine version
+        id: version
+        shell: pwsh
+        run: |
+          $v = "${{ github.event.inputs.version }}"
+          if ([string]::IsNullOrWhiteSpace($v)) { $v = "0.1.0" }
+          echo "value=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Restore
+        run: dotnet restore ResellerSystem.sln
+
+      - name: Run fast unit tests (no Docker required)
+        run: |
+          dotnet test tests/Server.Domain.Tests -c Release --nologo
+          dotnet test tests/Server.Application.Tests -c Release --nologo
+          dotnet test tests/Server.Api.Tests -c Release --nologo
+          dotnet test tests/Modules.Inventory.Tests -c Release --nologo
+          dotnet test tests/Modules.Sales.Tests -c Release --nologo
+
+      - name: Download PostgreSQL portable binaries
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path redist | Out-Null
+          # Official EDB "binaries" zip — PostgreSQL License, free for any use.
+          # EDB does NOT use predictable version-named URLs — downloads are
+          # served via opaque fileid= links from https://sbp.enterprisedb.com,
+          # which change with every point release. This is the verified,
+          # current link for PostgreSQL 16.15 / Windows x86-64 as of the
+          # last check — if a future run of this workflow fails here, go to
+          # https://www.enterprisedb.com/download-postgresql-binaries ,
+          # find the current "Windows x86-64" binaries link, and update the
+          # URL below.
+          $url = "https://sbp.enterprisedb.com/getfile.jsp?fileid=1260422"
+          Invoke-WebRequest -Uri $url -OutFile "redist\postgresql-windows-x64-binaries.zip"
+
+      - name: Publish Server.Host (self-contained win-x64)
+        run: |
+          dotnet publish src/Server.Host/Server.Host.csproj -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:Version=${{ steps.version.outputs.value }} -o dist/server
+
+      - name: Publish Desktop.ServerManager
+        run: |
+          dotnet publish src/Desktop.ServerManager/Desktop.ServerManager.csproj -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true -o dist/servermanager
+
+      - name: Publish Server.Updater
+        run: |
+          dotnet publish src/Server.Updater/Server.Updater.csproj -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true -o dist/updater
+
+      - name: Publish Desktop.App (Windows client)
+        run: |
+          dotnet publish src/Desktop.App/Desktop.App.csproj -c Release -r win-x64 --self-contained true -o dist/client-win
+
+      - name: Stage PostgreSQL binaries
+        shell: pwsh
+        run: |
+          Expand-Archive -Path "redist\postgresql-windows-x64-binaries.zip" -DestinationPath "dist\postgresql" -Force
+
+      - name: Patch appsettings.json storage paths
+        shell: pwsh
+        run: |
+          $path = "dist\server\appsettings.json"
+          $json = Get-Content $path -Raw | ConvertFrom-Json
+          $json.Storage.StorageRoot = "C:\ProgramData\ResellerSystem\storage"
+          $json.Storage.BackupRoot  = "C:\ProgramData\ResellerSystem\backups"
+          $json.Storage.UpdateRoot  = "C:\ProgramData\ResellerSystem\updates"
+          $json.Storage.TempRoot    = "C:\ProgramData\ResellerSystem\temp"
+          $json.Versioning.ServerVersion = "${{ steps.version.outputs.value }}"
+          $json | ConvertTo-Json -Depth 6 | Set-Content $path -Encoding UTF8
+
+      - name: Compile installers with Inno Setup
+        shell: pwsh
+        run: |
+          # Inno Setup 6 is preinstalled on windows-latest GitHub runners.
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          & $iscc "installer\inno\ServerSetup.iss" "/DMyAppVersion=${{ steps.version.outputs.value }}"
+          & $iscc "installer\inno\ClientSetup.iss" "/DMyAppVersion=${{ steps.version.outputs.value }}"
+
+      - name: Package update manifest + zip
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "dist\server\*" -DestinationPath "artifacts\server-update-${{ steps.version.outputs.value }}.zip" -Force
+          $hash = (Get-FileHash "artifacts\server-update-${{ steps.version.outputs.value }}.zip" -Algorithm SHA256).Hash.ToLower()
+          $size = (Get-Item "artifacts\server-update-${{ steps.version.outputs.value }}.zip").Length
+          $manifest = [ordered]@{
+            productVersion = "${{ steps.version.outputs.value }}"
+            releasedAt = (Get-Date).ToUniversalTime().ToString("o")
+            minimumUpgradeFromVersion = "0.1.0"
+            server = [ordered]@{ url = "PLACEHOLDER"; sha256 = $hash; sizeBytes = $size }
+            releaseNotesUrl = "PLACEHOLDER"
+          }
+          $manifest | ConvertTo-Json -Depth 5 | Set-Content "artifacts\update-manifest.json" -Encoding UTF8
+
+      - name: Upload Windows installers as build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installers
+          path: |
+            artifacts/*.exe
+            artifacts/*.zip
+            artifacts/*.json
+          if-no-files-found: error
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Determine version
+        id: version
+        run: |
+          v="${{ github.event.inputs.version }}"
+          if [ -z "$v" ]; then v="0.1.0"; fi
+          echo "value=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Build macOS .dmg
+        run: |
+          chmod +x build/build-macos.sh
+          ./build/build-macos.sh ${{ steps.version.outputs.value }}
+
+      - name: Upload macOS package as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-installer
+          path: artifacts/ResellerSystem-macOS.dmg
+          if-no-files-found: error
