@@ -12,9 +12,14 @@ dist/
 artifacts/
 redist/*.zip
 
-# Local data (storage/backups/logs generated at runtime)
-**/data/
-**/logs/
+# Local data (storage/backups/logs generated at runtime by Server.Host).
+# Scoped to this exact path, NOT a wildcard **/data/ or **/logs/ — git on
+# macOS matches .gitignore case-insensitively by default (core.ignorecase),
+# so a wildcard pattern here silently swallowed real C# source folders
+# named "Data" (Modules.Sales/Data, Modules.Inventory/Data, etc.) and they
+# never made it into any commit until this was caught by a CI build failure.
+src/Server.Host/data/
+src/Server.Host/logs/
 
 # Plaintext initial admin credentials generated on first startup
 **/config/initial-admin-credentials.txt
