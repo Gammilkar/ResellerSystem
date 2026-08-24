@@ -99,6 +99,11 @@ jobs:
           $json.Storage.UpdateRoot  = "C:\ProgramData\ResellerSystem\updates"
           $json.Storage.TempRoot    = "C:\ProgramData\ResellerSystem\temp"
           $json.Versioning.ServerVersion = "${{ steps.version.outputs.value }}"
+          # "latest" always resolves to the newest published (non-prerelease)
+          # GitHub Release, so this URL never needs to change between
+          # releases — see publish-release job below, which is what
+          # actually creates that release with a real update-manifest.json.
+          $json.Updates.ManifestUrl = "https://github.com/${{ github.repository }}/releases/latest/download/update-manifest.json"
           $json | ConvertTo-Json -Depth 6 | Set-Content $path -Encoding UTF8
 
       - name: Compile installers with Inno Setup
@@ -163,3 +168,77 @@ jobs:
           name: macos-installer
           path: artifacts/ResellerSystem-macOS.dmg
           if-no-files-found: error
+
+  publish-release:
+    # Turns the two Actions-artifact bundles above into a real GitHub
+    # Release, which is what makes the in-app "Install Update" button work:
+    # UpdateService (Server.Data/Update/UpdateService.cs) polls
+    # Updates:ManifestUrl (releases/latest/download/update-manifest.json)
+    # and downloads Server.Server.url from it — both need to be real URLs,
+    # not the "PLACEHOLDER" the build-windows job writes into the manifest
+    # (it has no way to know its own release's URL ahead of time; this job
+    # does, since GitHub Release asset URLs are a predictable
+    # {repo}/releases/download/{tag}/{filename} pattern).
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Determine version
+        id: version
+        run: |
+          v="${{ github.event.inputs.version }}"
+          if [ -z "$v" ]; then v="0.1.0"; fi
+          echo "value=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Download Windows installer artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-installers
+          path: release-assets
+
+      - name: Download macOS installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-installer
+          path: release-assets
+
+      - name: Patch update-manifest.json with real release URLs
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.value }}"
+          # Unique per run even without a manual version bump, so repeated
+          # pushes to main (the common case here) never collide with an
+          # existing tag. The newest release becomes GitHub's "latest"
+          # automatically as long as it isn't marked prerelease/draft.
+          tag="v${version}-${{ github.run_number }}"
+          echo "tag=$tag" >> "$GITHUB_ENV"
+
+          zip_name="server-update-${version}.zip"
+          manifest_path="release-assets/update-manifest.json"
+
+          if [ ! -f "release-assets/$zip_name" ]; then
+            echo "::error::Expected $zip_name in release-assets/, found:" >&2
+            ls -la release-assets >&2
+            exit 1
+          fi
+
+          zip_url="https://github.com/${{ github.repository }}/releases/download/${tag}/${zip_name}"
+          notes_url="https://github.com/${{ github.repository }}/releases/tag/${tag}"
+
+          jq --arg url "$zip_url" --arg notes "$notes_url" \
+            '.server.url = $url | .releaseNotesUrl = $notes' \
+            "$manifest_path" > "$manifest_path.tmp"
+          mv "$manifest_path.tmp" "$manifest_path"
+
+          echo "Patched manifest:"
+          cat "$manifest_path"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$tag" release-assets/* \
+            --repo "${{ github.repository }}" \
+            --title "ResellerSystem ${{ steps.version.outputs.value }} (build ${{ github.run_number }})" \
+            --notes "Automated build from commit ${{ github.sha }}. See KNOWN_LIMITATIONS.md — the Update Engine's DB-rollback and side-by-side install cycle are still unverified end-to-end on a real Windows machine."

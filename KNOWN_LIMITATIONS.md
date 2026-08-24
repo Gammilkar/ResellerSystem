@@ -92,11 +92,24 @@ dotnet test tests/Server.Data.Tests   # требует Docker
 - **`Server.Updater` запускается с `Verb = "runas"`** — если Server.Host
   уже выполняется под LocalSystem (обычный случай для Windows Service),
   UAC не должен всплывать, но это не проверено на реальной службе.
-- Манифест обновлений (`update-manifest.json`) сейчас должен публиковаться
-  вручную (например, как GitHub Release asset) — `build-release.ps1`
-  генерирует файл с плейсхолдерами `REPLACE_WITH_...`, которые нужно
-  заменить перед публикацией. Полностью автоматической публикации релиза
-  нет.
+- ~~Манифест обновлений публикуется вручную~~ Исправлено (2026-08-24) —
+  добавлен job `publish-release` в `.github/workflows/build-release.yml`:
+  после сборки Windows/macOS-артефактов он подставляет в
+  `update-manifest.json` настоящие URL (`server.url`, `releaseNotesUrl`,
+  вычисляются из предсказуемого паттерна `{repo}/releases/download/{tag}/*`
+  — плейсхолдеры больше не нужны) и публикует всё как обычный GitHub
+  Release (тег `v{version}-{run_number}`, уникален даже без ручного бампа
+  версии). `Updates:ManifestUrl` в поставляемом `appsettings.json` теперь
+  тоже прописывается автоматически на `releases/latest/download/update-manifest.json`
+  — "latest" у GitHub всегда указывает на самый свежий непререлизный
+  Release, так что этот URL не меняется между версиями.
+  **Важно:** это закрывает только публикацию манифеста. Сам цикл
+  скачивание → проверка checksum → бэкап → остановка службы → подмена
+  symlink → health-check → (при неудаче) откат — реализован в
+  `Server.Updater`/`UpdateService`, но **ни разу не прогонялся на реальной
+  Windows-машине** (см. пункты выше про `runas` и side-by-side раскладку).
+  Первое реальное нажатие кнопки "Install Update" в Server Manager будет
+  первым живым тестом этого пути.
 
 ## macOS
 
