@@ -27,8 +27,15 @@ public interface IServerApiClient
     Task<VersionResponse> GetVersionAsync(CancellationToken ct = default);
 
     Task<AuthStatusResponse> GetAuthStatusAsync(CancellationToken ct = default);
-    Task LoginAsync(string username, string password, CancellationToken ct = default);
+    Task<LoginResponse> LoginAsync(string username, string password, bool rememberMe = false, CancellationToken ct = default);
     Task InitialSetupAsync(string username, string password, CancellationToken ct = default);
+
+    /// <summary>Revokes the current session on the server, then clears the
+    /// local bearer token (see SetSessionToken). Safe to call even if the
+    /// token turns out to already be invalid/expired.</summary>
+    Task LogoutAsync(CancellationToken ct = default);
+
+    Task ChangePasswordAsync(string currentPassword, string newPassword, CancellationToken ct = default);
 
     Task<IReadOnlyList<DatabaseProfileDto>> ListDatabasesAsync(CancellationToken ct = default);
     Task<DatabaseProfileDto> GetDatabaseAsync(Guid id, CancellationToken ct = default);

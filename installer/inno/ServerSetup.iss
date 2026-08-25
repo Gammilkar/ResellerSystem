@@ -11,7 +11,7 @@
 ; See build\build-release.ps1 for how these folders are produced.
 
 #define MyAppName "Reseller System Server"
-#define MyAppVersion "0.1.1"
+#define MyAppVersion "0.1.2"
 #define MyAppPublisher "ResellerSystem"
 #define MyServiceName "ResellerSystemServer"
 #define MyPgServiceName "ResellerSystemPostgreSQL"

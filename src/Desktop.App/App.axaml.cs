@@ -25,24 +25,25 @@ public sealed class App : Application
         var services = new ServiceCollection();
 
         services.AddSingleton<ClientSessionState>();
+        services.AddSingleton<ITrustedDeviceStore, TrustedDeviceStore>();
 
         // A single shared IServerApiClient instance for the app's lifetime:
         // AddHttpClient<TClient>() registers TClient as transient, which
         // would hand each screen's ViewModel a fresh, unconfigured
-        // HttpClient (BaseAddress unset) after ServerConnectionViewModel
-        // already called Configure() on a different instance.
+        // HttpClient (BaseAddress unset) after SignInViewModel already
+        // called Configure() on a different instance.
         services.AddHttpClient();
         services.AddSingleton<IServerApiClient>(sp =>
             new ServerApiClient(sp.GetRequiredService<IHttpClientFactory>().CreateClient(nameof(ServerApiClient))));
 
         services.AddSingleton<MainWindowViewModel>();
-        services.AddTransient<ServerConnectionViewModel>();
+        services.AddTransient<SignInViewModel>();
         services.AddTransient<InitialSetupViewModel>();
-        services.AddTransient<LoginViewModel>();
         services.AddTransient<DatabaseListViewModel>();
         services.AddTransient<CreateDatabaseViewModel>();
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<InventoryViewModel>();
+        services.AddTransient<ChangePasswordViewModel>();
 
         services.AddSingleton<INavigationService, NavigationService>();
 
@@ -53,10 +54,49 @@ public sealed class App : Application
             var mainWindowViewModel = Services.GetRequiredService<MainWindowViewModel>();
             desktop.MainWindow = new MainWindow { DataContext = mainWindowViewModel };
 
-            // First screen per Stage 1 spec: Server Connection.
-            Services.GetRequiredService<INavigationService>().ShowServerConnection();
+            _ = TryAutoSignInAsync();
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>"Trust this device" (see SignInViewModel/TrustedDeviceStore):
+    /// if a saved session exists, is unexpired, and still validates against
+    /// the server, skip straight to the database list. Otherwise fall back
+    /// to the normal sign-in screen — this covers the token being revoked,
+    /// the server having been reinstalled, the server being unreachable,
+    /// etc., all of which should just look like "not signed in" rather than
+    /// crashing the app on startup.</summary>
+    private static async Task TryAutoSignInAsync()
+    {
+        var navigation = Services.GetRequiredService<INavigationService>();
+        var trustedDeviceStore = Services.GetRequiredService<ITrustedDeviceStore>();
+        var saved = trustedDeviceStore.Load();
+
+        if (saved is not null)
+        {
+            try
+            {
+                var apiClient = Services.GetRequiredService<IServerApiClient>();
+                apiClient.Configure(saved.ServerAddress);
+                apiClient.SetSessionToken(saved.Token);
+
+                await apiClient.GetHealthAsync();
+                await apiClient.ListDatabasesAsync(); // also proves the token itself is still valid
+
+                var session = Services.GetRequiredService<ClientSessionState>();
+                session.ServerAddress = saved.ServerAddress;
+                session.SessionToken = "set"; // presence flag only — see ClientSessionState
+
+                navigation.ShowDatabaseList();
+                return;
+            }
+            catch
+            {
+                trustedDeviceStore.Clear();
+            }
+        }
+
+        navigation.ShowSignIn();
     }
 }

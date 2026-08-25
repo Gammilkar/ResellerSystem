@@ -1,0 +1,32 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ResellerSystem.Desktop.ViewModels"
+             x:Class="ResellerSystem.Desktop.App.Views.SignInView"
+             x:DataType="vm:SignInViewModel">
+    <StackPanel Spacing="12" MaxWidth="360" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <TextBlock Text="Reseller System" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center" />
+
+        <StackPanel>
+            <TextBlock Text="Server" FontSize="11" />
+            <TextBox Text="{Binding ServerAddress}" Watermark="http://192.168.1.100:5000" />
+        </StackPanel>
+
+        <StackPanel>
+            <TextBlock Text="Username" FontSize="11" />
+            <TextBox Text="{Binding Username}" />
+        </StackPanel>
+
+        <StackPanel>
+            <TextBlock Text="Password" FontSize="11" />
+            <TextBox Text="{Binding Password}" PasswordChar="*" />
+        </StackPanel>
+
+        <CheckBox Content="Trust this device (skip password next time)" IsChecked="{Binding RememberMe}" />
+
+        <Button Content="Sign In" Command="{Binding SignInCommand}"
+                IsEnabled="{Binding !IsBusy}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+
+        <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    </StackPanel>
+</UserControl>

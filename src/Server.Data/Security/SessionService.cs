@@ -12,6 +12,12 @@ public sealed class SessionService : ISessionService
 {
     private static readonly TimeSpan SessionLifetime = TimeSpan.FromHours(12);
 
+    /// <summary>"Trusted device" lifetime — see LoginRequest.RememberMe.
+    /// The client persists a session created with this lifetime to local
+    /// disk (DPAPI-encrypted, current Windows user only) so it can skip
+    /// the password prompt on next launch, up until this expiry.</summary>
+    private static readonly TimeSpan RememberMeLifetime = TimeSpan.FromDays(30);
+
     private readonly ConnectionStringFactory _connectionStringFactory;
 
     public SessionService(ConnectionStringFactory connectionStringFactory)
@@ -19,11 +25,11 @@ public sealed class SessionService : ISessionService
         _connectionStringFactory = connectionStringFactory;
     }
 
-    public async Task<SessionInfo> CreateSessionAsync(Guid userId, CancellationToken ct = default)
+    public async Task<SessionInfo> CreateSessionAsync(Guid userId, bool rememberMe, CancellationToken ct = default)
     {
         var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
             .Replace('+', '-').Replace('/', '_').TrimEnd('=');
-        var expiresAt = DateTimeOffset.UtcNow.Add(SessionLifetime);
+        var expiresAt = DateTimeOffset.UtcNow.Add(rememberMe ? RememberMeLifetime : SessionLifetime);
 
         await using var connection = new NpgsqlConnection(_connectionStringFactory.BuildMasterConnectionString());
         await connection.OpenAsync(ct);

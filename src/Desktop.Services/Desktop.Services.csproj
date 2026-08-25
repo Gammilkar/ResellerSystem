@@ -6,6 +6,9 @@
     <RootNamespace>ResellerSystem.Desktop.Services</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Domain.Shared\Domain.Shared.csproj" />
   </ItemGroup>
 </Project>

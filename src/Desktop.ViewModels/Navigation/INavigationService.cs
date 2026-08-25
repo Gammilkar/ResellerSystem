@@ -4,11 +4,11 @@ namespace ResellerSystem.Desktop.ViewModels.Navigation;
 /// depending on Avalonia/UI types.</summary>
 public interface INavigationService
 {
-    void ShowServerConnection();
+    void ShowSignIn();
     void ShowInitialSetup();
-    void ShowLogin();
     void ShowDatabaseList();
     void ShowCreateDatabase();
     void ShowDashboard();
     void ShowInventory();
+    void ShowChangePassword();
 }

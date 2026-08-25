@@ -10,6 +10,8 @@
             <Button Content="Refresh" Command="{Binding LoadCommand}" />
             <Button Content="Open Inventory" Command="{Binding OpenInventoryCommand}" />
             <Button Content="Change Database" Command="{Binding ChangeDatabaseCommand}" />
+            <Button Content="Change Password" Command="{Binding ChangePasswordCommand}" />
+            <Button Content="Sign Out" Command="{Binding SignOutCommand}" />
         </StackPanel>
 
         <TextBlock DockPanel.Dock="Top" Text="{Binding ErrorMessage}" Foreground="Red"

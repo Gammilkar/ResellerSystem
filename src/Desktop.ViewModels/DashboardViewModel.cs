@@ -18,12 +18,14 @@ public sealed partial class DashboardViewModel : ViewModelBase
 {
     private readonly IServerApiClient _apiClient;
     private readonly ClientSessionState _session;
+    private readonly ITrustedDeviceStore _trustedDeviceStore;
     private readonly INavigationService _navigation;
 
-    public DashboardViewModel(IServerApiClient apiClient, ClientSessionState session, INavigationService navigation)
+    public DashboardViewModel(IServerApiClient apiClient, ClientSessionState session, ITrustedDeviceStore trustedDeviceStore, INavigationService navigation)
     {
         _apiClient = apiClient;
         _session = session;
+        _trustedDeviceStore = trustedDeviceStore;
         _navigation = navigation;
 
         DatabaseName = session.SelectedDatabase?.Name ?? "(none)";
@@ -116,4 +118,17 @@ public sealed partial class DashboardViewModel : ViewModelBase
 
     [RelayCommand]
     private void OpenInventory() => _navigation.ShowInventory();
+
+    [RelayCommand]
+    private void ChangePassword() => _navigation.ShowChangePassword();
+
+    [RelayCommand]
+    private async Task SignOutAsync()
+    {
+        await _apiClient.LogoutAsync();
+        _trustedDeviceStore.Clear();
+        _session.SessionToken = null;
+        _session.SelectedDatabase = null;
+        _navigation.ShowSignIn();
+    }
 }

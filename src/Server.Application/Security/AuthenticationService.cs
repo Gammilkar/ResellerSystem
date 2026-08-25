@@ -16,7 +16,7 @@ public sealed class AuthenticationService : IAuthenticationService
         _sessionService = sessionService;
     }
 
-    public async Task<LoginResult> LoginAsync(string username, string password, CancellationToken ct = default)
+    public async Task<LoginResult> LoginAsync(string username, string password, bool rememberMe, CancellationToken ct = default)
     {
         var user = await _userRepository.GetByUsernameAsync(username, ct);
         if (user is null || !user.IsActive)
@@ -31,7 +31,7 @@ public sealed class AuthenticationService : IAuthenticationService
             return new LoginResult(false, null, null, "Invalid username or password.");
         }
 
-        var session = await _sessionService.CreateSessionAsync(user.Id, ct);
+        var session = await _sessionService.CreateSessionAsync(user.Id, rememberMe, ct);
         return new LoginResult(true, session.Token, session.ExpiresAt, null);
     }
 
@@ -48,5 +48,24 @@ public sealed class AuthenticationService : IAuthenticationService
         var (hash, salt) = _passwordHasher.Hash(password);
         var user = User.CreateNew(username, hash, salt);
         await _userRepository.AddAsync(user, ct);
+    }
+
+    public async Task<ChangePasswordResult> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword, CancellationToken ct = default)
+    {
+        var user = await _userRepository.GetByIdAsync(userId, ct);
+        if (user is null || !user.IsActive)
+        {
+            return new ChangePasswordResult(false, "User not found.");
+        }
+
+        if (!_passwordHasher.Verify(currentPassword, user.PasswordHash, user.PasswordSalt))
+        {
+            return new ChangePasswordResult(false, "Current password is incorrect.");
+        }
+
+        var (hash, salt) = _passwordHasher.Hash(newPassword);
+        user.ChangePassword(hash, salt);
+        await _userRepository.UpdateAsync(user, ct);
+        return new ChangePasswordResult(true, null);
     }
 }

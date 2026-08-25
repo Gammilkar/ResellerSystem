@@ -8,19 +8,24 @@ using ResellerSystem.Desktop.ViewModels.Navigation;
 namespace ResellerSystem.Desktop.ViewModels;
 
 /// <summary>
-/// First screen: enter a server address (e.g. "http://192.168.1.100:5000"),
-/// connect, and show server version/status once reachable.
+/// Single combined sign-in screen: server address + username + password,
+/// replacing the old two-step ServerConnection -> Login flow. "Trust this
+/// device" persists the session (see ITrustedDeviceStore) so the app can
+/// skip straight to the database list on next launch — App.axaml.cs tries
+/// that before ever showing this screen.
 /// </summary>
-public sealed partial class ServerConnectionViewModel : ViewModelBase
+public sealed partial class SignInViewModel : ViewModelBase
 {
     private readonly IServerApiClient _apiClient;
     private readonly ClientSessionState _session;
+    private readonly ITrustedDeviceStore _trustedDeviceStore;
     private readonly INavigationService _navigation;
 
-    public ServerConnectionViewModel(IServerApiClient apiClient, ClientSessionState session, INavigationService navigation)
+    public SignInViewModel(IServerApiClient apiClient, ClientSessionState session, ITrustedDeviceStore trustedDeviceStore, INavigationService navigation)
     {
         _apiClient = apiClient;
         _session = session;
+        _trustedDeviceStore = trustedDeviceStore;
         _navigation = navigation;
 
         ServerAddress = session.ServerAddress ?? "http://localhost:5000";
@@ -30,40 +35,50 @@ public sealed partial class ServerConnectionViewModel : ViewModelBase
     private string _serverAddress = string.Empty;
 
     [ObservableProperty]
-    private bool _isConnecting;
+    private string _username = string.Empty;
+
+    [ObservableProperty]
+    private string _password = string.Empty;
+
+    [ObservableProperty]
+    private bool _rememberMe;
+
+    [ObservableProperty]
+    private bool _isBusy;
 
     [ObservableProperty]
     private string? _errorMessage;
 
-    [ObservableProperty]
-    private string? _connectedServerVersion;
-
-    [ObservableProperty]
-    private string? _connectedStatus;
-
     [RelayCommand]
-    private async Task ConnectAsync()
+    private async Task SignInAsync()
     {
         ErrorMessage = null;
-        IsConnecting = true;
+        IsBusy = true;
         try
         {
             _apiClient.Configure(ServerAddress);
-            var health = await _apiClient.GetHealthAsync();
-
-            ConnectedServerVersion = health.ServerVersion;
-            ConnectedStatus = health.Status;
+            await _apiClient.GetHealthAsync();
             _session.ServerAddress = ServerAddress;
 
             var authStatus = await _apiClient.GetAuthStatusAsync();
             if (authStatus.NeedsInitialSetup)
             {
                 _navigation.ShowInitialSetup();
+                return;
+            }
+
+            var login = await _apiClient.LoginAsync(Username, Password, RememberMe);
+
+            if (RememberMe)
+            {
+                _trustedDeviceStore.Save(new TrustedDeviceSession(ServerAddress, login.Token, login.ExpiresAt));
             }
             else
             {
-                _navigation.ShowLogin();
+                _trustedDeviceStore.Clear();
             }
+
+            _navigation.ShowDatabaseList();
         }
         catch (HttpRequestException ex)
         {
@@ -71,7 +86,7 @@ public sealed partial class ServerConnectionViewModel : ViewModelBase
         }
         catch (ServerApiException ex)
         {
-            ErrorMessage = $"Server error: {ex.Error.Message}";
+            ErrorMessage = ex.Error.Message;
         }
         catch (Exception ex)
         {
@@ -79,7 +94,7 @@ public sealed partial class ServerConnectionViewModel : ViewModelBase
         }
         finally
         {
-            IsConnecting = false;
+            IsBusy = false;
         }
     }
 }

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ResellerSystem.Domain.Shared.Dto;
 using ResellerSystem.Server.Application.Databases;
@@ -12,6 +13,7 @@ namespace ResellerSystem.Server.Api.Controllers;
 /// DELETE verb — see Architecture Plan section 7).
 /// </summary>
 [ApiController]
+[Authorize]
 [Route("api/v1/databases")]
 public sealed class DatabasesController : ControllerBase
 {

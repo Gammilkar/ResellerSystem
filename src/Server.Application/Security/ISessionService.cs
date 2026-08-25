@@ -9,7 +9,10 @@ public sealed record SessionInfo(string Token, Guid UserId, DateTimeOffset Expir
 /// </summary>
 public interface ISessionService
 {
-    Task<SessionInfo> CreateSessionAsync(Guid userId, CancellationToken ct = default);
+    /// <param name="rememberMe">true = long-lived "trusted device" session
+    /// (see SessionService.RememberMeLifetime); false = the normal short
+    /// session.</param>
+    Task<SessionInfo> CreateSessionAsync(Guid userId, bool rememberMe, CancellationToken ct = default);
     Task<Guid?> ValidateTokenAsync(string token, CancellationToken ct = default);
     Task RevokeAsync(string token, CancellationToken ct = default);
 }

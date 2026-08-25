@@ -52,16 +52,38 @@ public sealed class ServerApiClient : IServerApiClient
     public Task<AuthStatusResponse> GetAuthStatusAsync(CancellationToken ct = default) =>
         SendAsync<AuthStatusResponse>(HttpMethod.Get, "/api/v1/auth/status", null, ct);
 
-    public async Task LoginAsync(string username, string password, CancellationToken ct = default)
+    public async Task<LoginResponse> LoginAsync(string username, string password, bool rememberMe = false, CancellationToken ct = default)
     {
         var response = await SendAsync<LoginResponse>(HttpMethod.Post, "/api/v1/auth/login",
-            new LoginRequest { Username = username, Password = password }, ct);
+            new LoginRequest { Username = username, Password = password, RememberMe = rememberMe }, ct);
         SetSessionToken(response.Token);
+        return response;
     }
 
     public Task InitialSetupAsync(string username, string password, CancellationToken ct = default) =>
         SendNoContentAsync(HttpMethod.Post, "/api/v1/auth/setup",
             new InitialSetupRequest { Username = username, Password = password }, ct);
+
+    public async Task LogoutAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            await SendNoContentAsync(HttpMethod.Post, "/api/v1/auth/logout", null, ct);
+        }
+        catch (ServerApiException)
+        {
+            // Token already invalid/expired server-side — fine, we're
+            // clearing it locally regardless.
+        }
+        finally
+        {
+            SetSessionToken(null);
+        }
+    }
+
+    public Task ChangePasswordAsync(string currentPassword, string newPassword, CancellationToken ct = default) =>
+        SendNoContentAsync(HttpMethod.Post, "/api/v1/auth/change-password",
+            new ChangePasswordRequest { CurrentPassword = currentPassword, NewPassword = newPassword }, ct);
 
     public Task<IReadOnlyList<DatabaseProfileDto>> ListDatabasesAsync(CancellationToken ct = default) =>
         SendAsync<IReadOnlyList<DatabaseProfileDto>>(HttpMethod.Get, "/api/v1/databases", null, ct);

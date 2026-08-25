@@ -80,5 +80,5 @@ public sealed partial class DatabaseListViewModel : ViewModelBase
     private void CreateNew() => _navigation.ShowCreateDatabase();
 
     [RelayCommand]
-    private void ChangeServer() => _navigation.ShowServerConnection();
+    private void ChangeServer() => _navigation.ShowSignIn();
 }

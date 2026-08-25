@@ -14,11 +14,11 @@ public sealed class NavigationService : INavigationService
         _services = services;
     }
 
-    public void ShowServerConnection() => SetCurrent(_services.GetRequiredService<ServerConnectionViewModel>());
+    public void ShowSignIn() => SetCurrent(_services.GetRequiredService<SignInViewModel>());
 
     public void ShowInitialSetup() => SetCurrent(_services.GetRequiredService<InitialSetupViewModel>());
 
-    public void ShowLogin() => SetCurrent(_services.GetRequiredService<LoginViewModel>());
+    public void ShowChangePassword() => SetCurrent(_services.GetRequiredService<ChangePasswordViewModel>());
 
     public void ShowDatabaseList()
     {

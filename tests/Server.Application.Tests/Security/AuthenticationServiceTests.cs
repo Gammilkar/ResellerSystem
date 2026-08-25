@@ -24,7 +24,7 @@ public class AuthenticationServiceTests
     {
         _userRepository.GetByUsernameAsync("nobody", Arg.Any<CancellationToken>()).Returns((User?)null);
 
-        var result = await _sut.LoginAsync("nobody", "whatever");
+        var result = await _sut.LoginAsync("nobody", "whatever", rememberMe: false);
 
         result.Success.Should().BeFalse();
         result.FailureReason.Should().Be("Invalid username or password.");
@@ -37,7 +37,7 @@ public class AuthenticationServiceTests
         _userRepository.GetByUsernameAsync("admin", Arg.Any<CancellationToken>()).Returns(user);
         _passwordHasher.Verify("wrong", "hash", "salt").Returns(false);
 
-        var result = await _sut.LoginAsync("admin", "wrong");
+        var result = await _sut.LoginAsync("admin", "wrong", rememberMe: false);
 
         result.Success.Should().BeFalse();
         result.FailureReason.Should().Be("Invalid username or password.");
@@ -50,7 +50,7 @@ public class AuthenticationServiceTests
         user.SetActive(false);
         _userRepository.GetByUsernameAsync("admin", Arg.Any<CancellationToken>()).Returns(user);
 
-        var result = await _sut.LoginAsync("admin", "correct");
+        var result = await _sut.LoginAsync("admin", "correct", rememberMe: false);
 
         result.Success.Should().BeFalse();
     }
@@ -63,14 +63,32 @@ public class AuthenticationServiceTests
         _passwordHasher.Verify("correct", "hash", "salt").Returns(true);
 
         var expiresAt = DateTimeOffset.UtcNow.AddHours(12);
-        _sessionService.CreateSessionAsync(user.Id, Arg.Any<CancellationToken>())
+        _sessionService.CreateSessionAsync(user.Id, Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(new SessionInfo("tok123", user.Id, expiresAt));
 
-        var result = await _sut.LoginAsync("admin", "correct");
+        var result = await _sut.LoginAsync("admin", "correct", rememberMe: false);
 
         result.Success.Should().BeTrue();
         result.Token.Should().Be("tok123");
         result.ExpiresAt.Should().Be(expiresAt);
+    }
+
+    [Fact]
+    public async Task LoginAsync_passes_rememberMe_through_to_session_creation()
+    {
+        var user = User.CreateNew("admin", "hash", "salt");
+        _userRepository.GetByUsernameAsync("admin", Arg.Any<CancellationToken>()).Returns(user);
+        _passwordHasher.Verify("correct", "hash", "salt").Returns(true);
+
+        var expiresAt = DateTimeOffset.UtcNow.AddDays(30);
+        _sessionService.CreateSessionAsync(user.Id, true, Arg.Any<CancellationToken>())
+            .Returns(new SessionInfo("tok456", user.Id, expiresAt));
+
+        var result = await _sut.LoginAsync("admin", "correct", rememberMe: true);
+
+        result.Success.Should().BeTrue();
+        result.Token.Should().Be("tok456");
+        await _sessionService.Received(1).CreateSessionAsync(user.Id, true, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -102,5 +120,34 @@ public class AuthenticationServiceTests
         await _userRepository.Received(1).AddAsync(
             Arg.Is<User>(u => u.Username == "admin" && u.PasswordHash == "hashed" && u.PasswordSalt == "salted"),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_fails_when_current_password_is_wrong()
+    {
+        var user = User.CreateNew("admin", "hash", "salt");
+        _userRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
+        _passwordHasher.Verify("wrong", "hash", "salt").Returns(false);
+
+        var result = await _sut.ChangePasswordAsync(user.Id, "wrong", "newpassword123");
+
+        result.Success.Should().BeFalse();
+        await _userRepository.DidNotReceive().UpdateAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_hashes_and_persists_new_password_when_current_is_correct()
+    {
+        var user = User.CreateNew("admin", "oldhash", "oldsalt");
+        _userRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
+        _passwordHasher.Verify("correct", "oldhash", "oldsalt").Returns(true);
+        _passwordHasher.Hash("newpassword123").Returns(("newhash", "newsalt"));
+
+        var result = await _sut.ChangePasswordAsync(user.Id, "correct", "newpassword123");
+
+        result.Success.Should().BeTrue();
+        user.PasswordHash.Should().Be("newhash");
+        user.PasswordSalt.Should().Be("newsalt");
+        await _userRepository.Received(1).UpdateAsync(user, Arg.Any<CancellationToken>());
     }
 }

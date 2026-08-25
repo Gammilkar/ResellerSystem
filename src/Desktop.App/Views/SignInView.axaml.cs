@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace ResellerSystem.Desktop.App.Views;
 
-public partial class LoginView : UserControl
+public partial class SignInView : UserControl
 {
-    public LoginView()
+    public SignInView()
     {
         InitializeComponent();
     }
