@@ -70,33 +70,59 @@ public sealed class App : Application
     private static async Task TryAutoSignInAsync()
     {
         var navigation = Services.GetRequiredService<INavigationService>();
-        var trustedDeviceStore = Services.GetRequiredService<ITrustedDeviceStore>();
-        var saved = trustedDeviceStore.Load();
 
-        if (saved is not null)
+        // Never let anything in here leave the window blank (see
+        // MainWindow.axaml's ContentControl — CurrentViewModel staying
+        // null renders nothing at all, with no visible error). Whatever
+        // goes wrong, fall back to the plain sign-in screen.
+        try
         {
-            try
+            var trustedDeviceStore = Services.GetRequiredService<ITrustedDeviceStore>();
+            var saved = trustedDeviceStore.Load();
+
+            if (saved is not null)
             {
-                var apiClient = Services.GetRequiredService<IServerApiClient>();
-                apiClient.Configure(saved.ServerAddress);
-                apiClient.SetSessionToken(saved.Token);
+                try
+                {
+                    var apiClient = Services.GetRequiredService<IServerApiClient>();
+                    apiClient.Configure(saved.ServerAddress);
+                    apiClient.SetSessionToken(saved.Token);
 
-                await apiClient.GetHealthAsync();
-                await apiClient.ListDatabasesAsync(); // also proves the token itself is still valid
+                    await apiClient.GetHealthAsync();
+                    await apiClient.ListDatabasesAsync(); // also proves the token itself is still valid
 
-                var session = Services.GetRequiredService<ClientSessionState>();
-                session.ServerAddress = saved.ServerAddress;
-                session.SessionToken = "set"; // presence flag only — see ClientSessionState
+                    var session = Services.GetRequiredService<ClientSessionState>();
+                    session.ServerAddress = saved.ServerAddress;
+                    session.SessionToken = "set"; // presence flag only — see ClientSessionState
 
-                navigation.ShowDatabaseList();
-                return;
+                    navigation.ShowDatabaseList();
+                    return;
+                }
+                catch
+                {
+                    trustedDeviceStore.Clear();
+                }
             }
-            catch
-            {
-                trustedDeviceStore.Clear();
-            }
+        }
+        catch (Exception ex)
+        {
+            LogStartupError(ex);
         }
 
         navigation.ShowSignIn();
+    }
+
+    private static void LogStartupError(Exception ex)
+    {
+        try
+        {
+            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ResellerSystem Client", "logs");
+            Directory.CreateDirectory(dir);
+            File.AppendAllText(Path.Combine(dir, "startup-errors.log"), $"[{DateTimeOffset.UtcNow:o}] {ex}\n\n");
+        }
+        catch
+        {
+            // Logging itself must never be the reason startup fails.
+        }
     }
 }

@@ -16,6 +16,14 @@
     <PackageReference Include="Avalonia.Diagnostics" Version="11.1.3" Condition="'$(Configuration)' == 'Debug'" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+    <!-- Used transitively via Desktop.Services' TrustedDeviceStore (DPAPI).
+         Needs a direct reference here too — the SDK only writes a runtime
+         package into the *publishing* project's deps.json when that
+         project references it directly; without this, self-contained
+         publish copies the DLL to the output folder but the app can't
+         load it at runtime (FileNotFoundException, not caught by any
+         build-time check). -->
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Desktop.ViewModels\Desktop.ViewModels.csproj" />
