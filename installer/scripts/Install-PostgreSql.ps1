@@ -3,10 +3,10 @@
 .SYNOPSIS
   Installs and provisions a local, service-registered PostgreSQL instance
   for ResellerSystem, using bundled portable PostgreSQL binaries (EDB
-  "Portable"/zip build — PostgreSQL License, free for any use, no GUI
+  "Portable"/zip build - PostgreSQL License, free for any use, no GUI
   installer involved). Idempotent: safe to re-run on upgrade.
 
-  Called by the Inno Setup installer's [Run] section. Never prompts —
+  Called by the Inno Setup installer's [Run] section. Never prompts -
   fully silent, so the end user never sees a console window doing this.
 
 .PARAMETER InstallDir
@@ -42,7 +42,7 @@ function Write-Log($msg) {
 
 # --- 1. Generate (or reuse) a strong local-only admin password ------------
 if (Test-Path $credFile) {
-    Write-Log "Existing credentials file found — reusing (upgrade scenario)."
+    Write-Log "Existing credentials file found - reusing (upgrade scenario)."
     $creds = Get-Content $credFile -Raw | ConvertFrom-Json
     $AdminPassword = $creds.Password
 } else {
@@ -68,7 +68,7 @@ if (-not (Test-Path (Join-Path $DataDir "PG_VERSION"))) {
     & $initdb --username=$AdminUser --pwfile="$pwFile" --auth=scram-sha-256 --encoding=UTF8 -D "$DataDir" | Out-Null
     Remove-Item $pwFile -Force
 
-    # Bind to localhost only — never expose PostgreSQL itself to the LAN;
+    # Bind to localhost only - never expose PostgreSQL itself to the LAN;
     # only the Server API (a separate port) is reachable from other machines.
     $confPath = Join-Path $DataDir "postgresql.conf"
     (Get-Content $confPath) `
@@ -78,7 +78,7 @@ if (-not (Test-Path (Join-Path $DataDir "PG_VERSION"))) {
 
     Write-Log "initdb complete."
 } else {
-    Write-Log "Data directory already initialized — skipping initdb (upgrade/repair scenario)."
+    Write-Log "Data directory already initialized - skipping initdb (upgrade/repair scenario)."
 }
 
 # --- 3. Register as a Windows Service --------------------------------------

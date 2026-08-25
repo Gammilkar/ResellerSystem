@@ -3,7 +3,7 @@
 .SYNOPSIS
   Cleanly stops and removes the Windows Services created by the installer,
   and removes the firewall rule. Deliberately does NOT delete
-  {commonappdata}\ResellerSystem (databases, documents, backups) — Inno
+  {commonappdata}\ResellerSystem (databases, documents, backups) - Inno
   Setup's uninstaller only removes files it installed; user data survives
   an uninstall by design so a reinstall/repair doesn't lose the business's
   data. A separate "Remove all data" option can be added to Server Manager

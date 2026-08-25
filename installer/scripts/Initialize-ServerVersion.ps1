@@ -10,7 +10,7 @@
 
   The Windows Service always points at {InstallDir}\server\Server.Host.exe
   (via the symlink), so it never needs reconfiguring when Server.Updater
-  swaps versions later — only the symlink target and current.txt change.
+  swaps versions later - only the symlink target and current.txt change.
 #>
 param(
     [Parameter(Mandatory = $true)][string]$InstallDir,
@@ -23,17 +23,17 @@ $linkPath = Join-Path $InstallDir "server"
 $currentFile = Join-Path $InstallDir "server-versions\current.txt"
 
 if (-not (Test-Path $versionDir)) {
-    throw "Expected published files at '$versionDir' — Inno Setup [Files] section must extract there."
+    throw "Expected published files at '$versionDir' - Inno Setup [Files] section must extract there."
 }
 
 if (Test-Path $linkPath) {
     $item = Get-Item $linkPath -Force
     if ($item.LinkType) {
-        # Already a symlink from a previous install/upgrade-via-installer run — remove and recreate.
+        # Already a symlink from a previous install/upgrade-via-installer run - remove and recreate.
         Remove-Item $linkPath -Force
     } else {
         # First-ever install where {app}\server exists as a real folder
-        # (shouldn't normally happen — Inno extracts to server-versions\ —
+        # (shouldn't normally happen - Inno extracts to server-versions\ -
         # but guard against it rather than deleting user data silently).
         Rename-Item $linkPath "$linkPath.bak-$(Get-Date -Format yyyyMMddHHmmss)"
     }
