@@ -30,6 +30,7 @@ public sealed class App : Application
         services.AddSingleton<ITrustedDeviceStore, TrustedDeviceStore>();
         services.AddSingleton<IFilePickerService, FilePickerService>();
         services.AddSingleton<ITableSettingsStore, TableSettingsStore>();
+        services.AddSingleton<IWindowSettingsStore, WindowSettingsStore>();
 
         // A single shared IServerApiClient instance for the app's lifetime:
         // AddHttpClient<TClient>() registers TClient as transient, which
@@ -71,7 +72,17 @@ public sealed class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var mainWindowViewModel = Services.GetRequiredService<MainWindowViewModel>();
-            desktop.MainWindow = new MainWindow { DataContext = mainWindowViewModel };
+            var mainWindow = new MainWindow { DataContext = mainWindowViewModel };
+
+            var savedWindow = Services.GetRequiredService<IWindowSettingsStore>().Load();
+            if (savedWindow is not null)
+            {
+                mainWindow.Width = savedWindow.Width;
+                mainWindow.Height = savedWindow.Height;
+                if (savedWindow.IsMaximized) mainWindow.WindowState = WindowState.Maximized;
+            }
+
+            desktop.MainWindow = mainWindow;
 
             _ = TryAutoSignInAsync();
         }

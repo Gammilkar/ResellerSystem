@@ -9,10 +9,10 @@
         CanResize="False">
     <StackPanel Margin="20" Spacing="12">
         <TextBlock Text="{Binding Title}" FontWeight="Bold" />
-        <CalendarDatePicker SelectedDate="{Binding SelectedDate}" HorizontalAlignment="Stretch" />
+        <CalendarDatePicker x:Name="Picker" HorizontalAlignment="Stretch" />
         <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-            <Button Content="Отмена" Command="{Binding CancelCommand}" />
-            <Button Content="OK" Command="{Binding OkCommand}" />
+            <Button Content="Отмена" Click="Cancel_Click" />
+            <Button Content="OK" Click="Ok_Click" />
         </StackPanel>
     </StackPanel>
 </Window>

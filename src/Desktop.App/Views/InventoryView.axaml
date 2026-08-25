@@ -97,16 +97,18 @@
                      reliably delivers clicks to standard interactive
                      controls placed in a CellTemplate (see the row-height
                      drag bug fixed in commit 48689d3, caused by exactly
-                     the opposite approach). -->
+                     the opposite approach). Wrapping needs an explicit
+                     TextBlock as the Button's Content (see each column
+                     below) — setting TextBlock.TextWrapping on the
+                     Button's own ContentPresenter doesn't reach the
+                     auto-generated TextBlock a plain string Content
+                     produces. -->
                 <Style Selector="Button.cell-link">
                     <Setter Property="Background" Value="Transparent" />
                     <Setter Property="BorderThickness" Value="0" />
                     <Setter Property="HorizontalContentAlignment" Value="Left" />
                     <Setter Property="HorizontalAlignment" Value="Stretch" />
                     <Setter Property="Padding" Value="6,4" />
-                </Style>
-                <Style Selector="Button.cell-link /template/ ContentPresenter">
-                    <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
                 </Style>
             </DataGrid.Styles>
             <DataGrid.Columns>
@@ -122,9 +124,11 @@
                                         IsVisible="{Binding ShowNameColumn}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
-                            <Button Classes="cell-link" Content="{Binding Name}"
+                            <Button Classes="cell-link"
                                     Command="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).OpenItemCardCommand}"
-                                    CommandParameter="{Binding}" />
+                                    CommandParameter="{Binding}">
+                                <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
+                            </Button>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -145,9 +149,11 @@
                                         IsVisible="{Binding ShowPurchaseDateColumn}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
-                            <Button Classes="cell-link" Content="{Binding PurchaseDate}"
+                            <Button Classes="cell-link"
                                     Command="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).OpenPurchaseDateCommand}"
-                                    CommandParameter="{Binding}" />
+                                    CommandParameter="{Binding}">
+                                <TextBlock Text="{Binding PurchaseDate}" TextWrapping="Wrap" />
+                            </Button>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -155,9 +161,11 @@
                                         IsVisible="{Binding ShowPurchaseSourceColumn}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
-                            <Button Classes="cell-link" Content="{Binding PurchaseSourceName}"
+                            <Button Classes="cell-link"
                                     Command="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).OpenPurchaseSourceCommand}"
-                                    CommandParameter="{Binding}" />
+                                    CommandParameter="{Binding}">
+                                <TextBlock Text="{Binding PurchaseSourceName}" TextWrapping="Wrap" />
+                            </Button>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -186,9 +194,11 @@
                                         IsVisible="{Binding ShowListingDateColumn}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
-                            <Button Classes="cell-link" Content="{Binding ListingPublishedDate, TargetNullValue='—'}"
+                            <Button Classes="cell-link"
                                     Command="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).OpenListingDateCommand}"
-                                    CommandParameter="{Binding}" />
+                                    CommandParameter="{Binding}">
+                                <TextBlock Text="{Binding ListingPublishedDate, TargetNullValue='—'}" TextWrapping="Wrap" />
+                            </Button>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -199,6 +209,7 @@
                             <AutoCompleteBox ItemsSource="{x:Static vm:MarketplaceOptions.Listing}"
                                       Text="{Binding ListingMarketplace, Mode=OneWay}"
                                       FilterMode="StartsWith"
+                                      MinimumPrefixLength="0"
                                       LostFocus="ListingMarketplaceCombo_LostFocus"
                                       HorizontalAlignment="Stretch" />
                         </DataTemplate>
@@ -208,9 +219,11 @@
                                         IsVisible="{Binding ShowSaleDateColumn}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
-                            <Button Classes="cell-link" Content="{Binding SaleDate, TargetNullValue='—'}"
+                            <Button Classes="cell-link"
                                     Command="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).OpenSaleDateCommand}"
-                                    CommandParameter="{Binding}" />
+                                    CommandParameter="{Binding}">
+                                <TextBlock Text="{Binding SaleDate, TargetNullValue='—'}" TextWrapping="Wrap" />
+                            </Button>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -221,6 +234,7 @@
                             <AutoCompleteBox ItemsSource="{x:Static vm:MarketplaceOptions.Sale}"
                                       Text="{Binding SaleMarketplace, Mode=OneWay}"
                                       FilterMode="StartsWith"
+                                      MinimumPrefixLength="0"
                                       LostFocus="SaleMarketplaceCombo_LostFocus"
                                       HorizontalAlignment="Stretch" />
                         </DataTemplate>
