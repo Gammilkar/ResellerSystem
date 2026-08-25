@@ -14,8 +14,8 @@ public sealed class ListingsController : ControllerBase
     public ListingsController(ISalesService service) => _service = service;
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<ListingDto>>> List(CancellationToken ct) =>
-        Ok(await _service.ListListingsAsync(ct));
+    public async Task<ActionResult<IReadOnlyList<ListingDto>>> List([FromQuery] Guid? itemId, CancellationToken ct) =>
+        Ok(await _service.ListListingsAsync(itemId, ct));
 
     [HttpPost]
     public async Task<ActionResult<ListingDto>> Create([FromBody] CreateListingRequest request, CancellationToken ct) =>
@@ -35,8 +35,8 @@ public sealed class SalesController : ControllerBase
     public SalesController(ISalesService service) => _service = service;
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<SaleDto>>> List(CancellationToken ct) =>
-        Ok(await _service.ListSalesAsync(ct));
+    public async Task<ActionResult<IReadOnlyList<SaleDto>>> List([FromQuery] Guid? itemId, CancellationToken ct) =>
+        Ok(await _service.ListSalesAsync(itemId, ct));
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<SaleDto>> Get(Guid id, CancellationToken ct) =>
@@ -71,8 +71,8 @@ public sealed class ReturnsController : ControllerBase
     public ReturnsController(ISalesService service) => _service = service;
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<ReturnDto>>> List(CancellationToken ct) =>
-        Ok(await _service.ListReturnsAsync(ct));
+    public async Task<ActionResult<IReadOnlyList<ReturnDto>>> List([FromQuery] Guid? itemId, CancellationToken ct) =>
+        Ok(await _service.ListReturnsAsync(itemId, ct));
 
     [HttpPost]
     public async Task<ActionResult<ReturnDto>> Create([FromBody] CreateReturnRequest request, CancellationToken ct) =>

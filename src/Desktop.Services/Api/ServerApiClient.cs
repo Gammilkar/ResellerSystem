@@ -118,6 +118,9 @@ public sealed class ServerApiClient : IServerApiClient
     public Task<PurchaseDto> CreatePurchaseAsync(CreatePurchaseRequest request, CancellationToken ct = default) =>
         SendAsync<PurchaseDto>(HttpMethod.Post, "/api/v1/inventory/purchases", request, ct);
 
+    public Task<PurchaseDto> GetPurchaseAsync(Guid id, CancellationToken ct = default) =>
+        SendAsync<PurchaseDto>(HttpMethod.Get, $"/api/v1/inventory/purchases/{id}", null, ct);
+
     public Task<PurchaseDto> UpdatePurchaseAsync(Guid id, UpdatePurchaseRequest request, CancellationToken ct = default) =>
         SendAsync<PurchaseDto>(HttpMethod.Patch, $"/api/v1/inventory/purchases/{id}", request, ct);
 
@@ -135,17 +138,38 @@ public sealed class ServerApiClient : IServerApiClient
     public Task<IReadOnlyList<InventoryTableRowDto>> ListInventoryTableAsync(CancellationToken ct = default) =>
         SendAsync<IReadOnlyList<InventoryTableRowDto>>(HttpMethod.Get, "/api/v1/inventory/items/table", null, ct);
 
+    public Task<IReadOnlyList<ListingDto>> ListListingsAsync(Guid? itemId = null, CancellationToken ct = default) =>
+        SendAsync<IReadOnlyList<ListingDto>>(HttpMethod.Get,
+            itemId is null ? "/api/v1/sales/listings" : $"/api/v1/sales/listings?itemId={itemId}", null, ct);
+
     public Task<ListingDto> CreateListingAsync(CreateListingRequest request, CancellationToken ct = default) =>
         SendAsync<ListingDto>(HttpMethod.Post, "/api/v1/sales/listings", request, ct);
 
     public Task<ListingDto> UpdateListingAsync(Guid id, UpdateListingRequest request, CancellationToken ct = default) =>
         SendAsync<ListingDto>(HttpMethod.Patch, $"/api/v1/sales/listings/{id}", request, ct);
 
+    public Task<IReadOnlyList<SaleDto>> ListSalesAsync(Guid? itemId = null, CancellationToken ct = default) =>
+        SendAsync<IReadOnlyList<SaleDto>>(HttpMethod.Get,
+            itemId is null ? "/api/v1/sales" : $"/api/v1/sales?itemId={itemId}", null, ct);
+
     public Task<SaleDto> CreateSaleAsync(CreateSaleRequest request, CancellationToken ct = default) =>
         SendAsync<SaleDto>(HttpMethod.Post, "/api/v1/sales", request, ct);
 
     public Task<SaleDto> UpdateSaleAsync(Guid id, UpdateSaleRequest request, CancellationToken ct = default) =>
         SendAsync<SaleDto>(HttpMethod.Patch, $"/api/v1/sales/{id}", request, ct);
+
+    public Task<SaleFeeDto> AddSaleFeeAsync(Guid saleId, CreateSaleFeeRequest request, CancellationToken ct = default) =>
+        SendAsync<SaleFeeDto>(HttpMethod.Post, $"/api/v1/sales/{saleId}/fees", request, ct);
+
+    public Task<SaleFinancialsDto> GetSaleFinancialsAsync(Guid saleId, CancellationToken ct = default) =>
+        SendAsync<SaleFinancialsDto>(HttpMethod.Get, $"/api/v1/sales/{saleId}/financials", null, ct);
+
+    public Task<IReadOnlyList<ReturnDto>> ListReturnsAsync(Guid? itemId = null, CancellationToken ct = default) =>
+        SendAsync<IReadOnlyList<ReturnDto>>(HttpMethod.Get,
+            itemId is null ? "/api/v1/sales/returns" : $"/api/v1/sales/returns?itemId={itemId}", null, ct);
+
+    public Task<ReturnDto> CreateReturnAsync(CreateReturnRequest request, CancellationToken ct = default) =>
+        SendAsync<ReturnDto>(HttpMethod.Post, "/api/v1/sales/returns", request, ct);
 
     public Task<IReadOnlyList<SupplierDto>> ListSuppliersAsync(CancellationToken ct = default) =>
         SendAsync<IReadOnlyList<SupplierDto>>(HttpMethod.Get, "/api/v1/inventory/suppliers", null, ct);
@@ -164,6 +188,58 @@ public sealed class ServerApiClient : IServerApiClient
 
     public Task<IReadOnlyList<SupplierPurchaseHistoryRowDto>> GetSupplierPurchaseHistoryAsync(Guid id, CancellationToken ct = default) =>
         SendAsync<IReadOnlyList<SupplierPurchaseHistoryRowDto>>(HttpMethod.Get, $"/api/v1/inventory/suppliers/{id}/purchases", null, ct);
+
+    public Task<IReadOnlyList<ExpenseDto>> ListExpensesAsync(Guid? itemId = null, Guid? purchaseId = null, Guid? saleId = null, CancellationToken ct = default)
+    {
+        var query = new List<string>();
+        if (itemId is not null) query.Add($"itemId={itemId}");
+        if (purchaseId is not null) query.Add($"purchaseId={purchaseId}");
+        if (saleId is not null) query.Add($"saleId={saleId}");
+        var path = "/api/v1/expenses" + (query.Count > 0 ? "?" + string.Join("&", query) : string.Empty);
+        return SendAsync<IReadOnlyList<ExpenseDto>>(HttpMethod.Get, path, null, ct);
+    }
+
+    public Task<ExpenseDto> CreateExpenseAsync(CreateExpenseRequest request, CancellationToken ct = default) =>
+        SendAsync<ExpenseDto>(HttpMethod.Post, "/api/v1/expenses", request, ct);
+
+    public Task DeleteExpenseAsync(Guid id, CancellationToken ct = default) =>
+        SendNoContentAsync(HttpMethod.Delete, $"/api/v1/expenses/{id}", null, ct);
+
+    public Task<DocumentDto> UploadDocumentAsync(string filePath, CancellationToken ct = default) =>
+        SendFileAsync<DocumentDto>("/api/v1/documents/upload", filePath, null, ct);
+
+    public Task<DocumentDto> LinkDocumentAsync(Guid documentId, string entityType, Guid entityId, CancellationToken ct = default) =>
+        SendAsync<DocumentDto>(HttpMethod.Post, $"/api/v1/documents/{documentId}/links",
+            new CreateDocumentLinkRequest { EntityType = entityType, EntityId = entityId }, ct);
+
+    public Task<IReadOnlyList<DocumentDto>> ListDocumentsForEntityAsync(string entityType, Guid entityId, CancellationToken ct = default) =>
+        SendAsync<IReadOnlyList<DocumentDto>>(HttpMethod.Get, $"/api/v1/documents/for/{Uri.EscapeDataString(entityType)}/{entityId}", null, ct);
+
+    public async Task<(byte[] Content, string? MimeType, string Filename)> DownloadDocumentAsync(Guid documentId, CancellationToken ct = default)
+    {
+        using var response = await _httpClient.GetAsync($"/api/v1/documents/{documentId}/content", ct);
+        if (!response.IsSuccessStatusCode)
+        {
+            await ThrowApiExceptionAsync(response, ct);
+        }
+
+        var bytes = await response.Content.ReadAsByteArrayAsync(ct);
+        var mimeType = response.Content.Headers.ContentType?.MediaType;
+        var filename = response.Content.Headers.ContentDisposition?.FileNameStar?.Trim('"')
+            ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
+            ?? "document";
+        return (bytes, mimeType, filename);
+    }
+
+    public Task<IReadOnlyList<AuditLogEntryDto>> GetAuditLogAsync(string? entityType, Guid? entityId, int limit = 200, CancellationToken ct = default)
+    {
+        var query = new List<string>();
+        if (!string.IsNullOrWhiteSpace(entityType)) query.Add($"entityType={Uri.EscapeDataString(entityType)}");
+        if (entityId is not null) query.Add($"entityId={entityId}");
+        query.Add($"limit={limit}");
+        var path = "/api/v1/audit-log?" + string.Join("&", query);
+        return SendAsync<IReadOnlyList<AuditLogEntryDto>>(HttpMethod.Get, path, null, ct);
+    }
 
     public Task<DashboardSummaryDto> GetDashboardSummaryAsync(CancellationToken ct = default) =>
         SendAsync<DashboardSummaryDto>(HttpMethod.Get, "/api/v1/dashboard/summary", null, ct);

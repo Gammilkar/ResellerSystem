@@ -169,7 +169,36 @@ public sealed class InventoryService : IInventoryService
             purchase.SourceName = request.SourceName.Trim();
         }
 
-        if (request.PurchaseType is not null) { TrackChange("PurchaseType", purchase.PurchaseType, request.PurchaseType); purchase.PurchaseType = request.PurchaseType; }
+        if (request.PurchaseType is not null)
+        {
+            TrackChange("PurchaseType", purchase.PurchaseType, request.PurchaseType);
+            purchase.PurchaseType = request.PurchaseType;
+
+            // Keep UsedResellerPermit in sync with PurchaseType, matching
+            // Purchase.CreateNew's invariant — unless this same request
+            // also explicitly set it, in which case the explicit value wins.
+            if (request.UsedResellerPermit is null)
+            {
+                var derived = request.PurchaseType == "ResellerPermit";
+                TrackChange("UsedResellerPermit", purchase.UsedResellerPermit.ToString(), derived.ToString());
+                purchase.UsedResellerPermit = derived;
+            }
+        }
+        if (request.UsedResellerPermit is not null)
+        {
+            TrackChange("UsedResellerPermit", purchase.UsedResellerPermit.ToString(), request.UsedResellerPermit.Value.ToString());
+            purchase.UsedResellerPermit = request.UsedResellerPermit.Value;
+        }
+        if (request.SalesTaxAmount is not null)
+        {
+            TrackChange("SalesTaxAmount", purchase.SalesTaxAmount.ToString(), request.SalesTaxAmount.Value.ToString());
+            purchase.SalesTaxAmount = request.SalesTaxAmount.Value;
+        }
+        if (request.SalesTaxRate is not null)
+        {
+            TrackChange("SalesTaxRate", purchase.SalesTaxRate?.ToString(), request.SalesTaxRate.Value.ToString());
+            purchase.SalesTaxRate = request.SalesTaxRate.Value;
+        }
         if (request.PurchaseDate is not null)
         {
             TrackChange("PurchaseDate", purchase.PurchaseDate.ToString("O"), request.PurchaseDate.Value.ToString("O"));

@@ -1,56 +1,404 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:ResellerSystem.Desktop.ViewModels"
+        xmlns:dto="using:ResellerSystem.Domain.Shared.Dto"
         x:Class="ResellerSystem.Desktop.App.Views.ItemCardDialog"
         x:DataType="vm:ItemCardDialogViewModel"
         Title="Карточка товара"
-        Width="420" SizeToContent="Height"
+        Width="780" Height="640"
         WindowStartupLocation="CenterOwner"
-        CanResize="False">
-    <StackPanel Margin="20" Spacing="10">
-        <TextBlock Text="{Binding ItemNumber, StringFormat='Товар № {0}'}" FontWeight="Bold" FontSize="16" />
+        CanResize="True">
+    <DockPanel Margin="16">
+        <TextBlock DockPanel.Dock="Top" Text="{Binding ItemNumber, StringFormat='Товар № {0}'}" FontWeight="Bold" FontSize="16" Margin="0,0,0,8" />
 
-        <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap"
-                   IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <TextBlock DockPanel.Dock="Top" Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap"
+                   IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Margin="0,0,0,8" />
 
-        <StackPanel Spacing="4">
-            <TextBlock Text="Наименование" FontSize="11" />
-            <TextBox Text="{Binding Name}" />
-        </StackPanel>
+        <Button DockPanel.Dock="Bottom" Content="Закрыть" Command="{Binding CloseCommand}" HorizontalAlignment="Right" Margin="0,8,0,0" />
 
-        <StackPanel Spacing="4">
-            <TextBlock Text="Категория" FontSize="11" />
-            <TextBox Text="{Binding CategoryName}" />
-        </StackPanel>
+        <TabControl>
+            <!-- ═══════════════════════════ Основное ═══════════════════════════ -->
+            <TabItem Header="Основное">
+                <ScrollViewer>
+                    <StackPanel Spacing="10" Margin="4">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Наименование" FontSize="11" />
+                            <TextBox Text="{Binding Name}" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Категория" FontSize="11" />
+                            <TextBox Text="{Binding CategoryName}" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Статус" FontSize="11" />
+                            <ComboBox ItemsSource="{Binding StatusOptionsList}"
+                                      SelectedValueBinding="{Binding Code}"
+                                      SelectedValue="{Binding Status}"
+                                      DisplayMemberBinding="{Binding Label}"
+                                      Width="200" HorizontalAlignment="Left" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Расчётная себестоимость" FontSize="11" />
+                                <TextBlock Text="{Binding CostBasisCalculated, StringFormat={}{0:C}}" VerticalAlignment="Center" Margin="4,4,0,4" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Переопределить (необязательно)" FontSize="11" />
+                                <TextBox Text="{Binding CostBasisOverrideText}" Width="120" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Итоговая себестоимость" FontSize="11" />
+                                <TextBlock Text="{Binding EffectiveCostBasis, StringFormat={}{0:C}}" FontWeight="Bold" VerticalAlignment="Center" Margin="4,4,0,4" />
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Заметки" FontSize="11" />
+                            <TextBox Text="{Binding Notes}" AcceptsReturn="True" TextWrapping="Wrap" Height="70" />
+                        </StackPanel>
+                        <Button Content="Сохранить" Command="{Binding SaveItemCommand}" HorizontalAlignment="Left" />
+                        <Separator Margin="0,8,0,0" />
+                        <StackPanel Orientation="Horizontal" Spacing="24">
+                            <TextBlock Text="{Binding CreatedInfo, StringFormat='Создано: {0}'}" FontSize="11" Foreground="Gray" />
+                            <TextBlock Text="{Binding UpdatedInfo, StringFormat='Изменено: {0}'}" FontSize="11" Foreground="Gray" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
 
-        <StackPanel Spacing="4">
-            <TextBlock Text="Статус" FontSize="11" />
-            <ComboBox ItemsSource="{Binding StatusOptionsList}"
-                      SelectedValueBinding="{Binding Code}"
-                      SelectedValue="{Binding Status}"
-                      DisplayMemberBinding="{Binding Label}"
-                      HorizontalAlignment="Stretch" />
-        </StackPanel>
+            <!-- ═══════════════════════════ Закупка ═══════════════════════════ -->
+            <TabItem Header="Закупка">
+                <ScrollViewer>
+                    <StackPanel Spacing="10" Margin="4">
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Дата покупки" FontSize="11" />
+                                <Button Content="{Binding PurchaseDateValue}" Command="{Binding OpenPurchaseDateCommand}" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Место покупки" FontSize="11" />
+                                <Button Content="{Binding SourceName}" Command="{Binding OpenSupplierPickerCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Тип закупки" FontSize="11" />
+                                <ComboBox ItemsSource="{Binding PurchaseTypeOptionsList}"
+                                          SelectedValueBinding="{Binding Code}"
+                                          SelectedValue="{Binding EditPurchaseType}"
+                                          DisplayMemberBinding="{Binding Label}"
+                                          Width="160" />
+                            </StackPanel>
+                            <CheckBox Content="Использован Reseller Permit" IsChecked="{Binding EditUsedResellerPermit}" VerticalAlignment="Bottom" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Закупочная цена товара" FontSize="11" />
+                                <TextBlock Text="{Binding CostBasisCalculated, StringFormat={}{0:C}}" VerticalAlignment="Center" Margin="4,4,0,4" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Sales Tax при покупке" FontSize="11" />
+                                <TextBox Text="{Binding EditSalesTaxAmountText}" Width="100" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Tax Rate (%)" FontSize="11" />
+                                <TextBox Text="{Binding EditSalesTaxRateText}" Width="100" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Итого закупка" FontSize="11" />
+                                <TextBlock Text="{Binding TotalAmount, StringFormat={}{0:C}}" VerticalAlignment="Center" Margin="4,4,0,4" />
+                            </StackPanel>
+                        </StackPanel>
+                        <Button Content="Сохранить" Command="{Binding SavePurchaseCommand}" HorizontalAlignment="Left" />
 
-        <StackPanel Orientation="Horizontal" Spacing="16">
-            <StackPanel Spacing="4">
-                <TextBlock Text="Расчётная себестоимость" FontSize="11" />
-                <TextBlock Text="{Binding CostBasisCalculated, StringFormat={}{0:C}}" VerticalAlignment="Center" Margin="4,4,0,4" />
-            </StackPanel>
-            <StackPanel Spacing="4">
-                <TextBlock Text="Переопределить (необязательно)" FontSize="11" />
-                <TextBox Text="{Binding CostBasisOverrideText}" Width="120" />
-            </StackPanel>
-        </StackPanel>
+                        <Separator Margin="0,8,0,0" />
+                        <TextBlock Text="Дополнительные расходы закупки" FontWeight="Bold" />
+                        <ItemsControl ItemsSource="{Binding Expenses}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="dto:ExpenseDto">
+                                    <Grid ColumnDefinitions="140,90,*" Margin="0,2">
+                                        <TextBlock Grid.Column="0" Text="{Binding ExpenseType}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Amount, StringFormat={}{0:C}}" />
+                                        <TextBlock Grid.Column="2" Text="{Binding Comment}" Foreground="Gray" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ComboBox ItemsSource="{Binding ExpenseTypeOptionsList}" SelectedItem="{Binding NewExpenseType}" Width="140" />
+                            <TextBox Text="{Binding NewExpenseAmountText}" Width="90" Watermark="Сумма" />
+                            <TextBox Text="{Binding NewExpenseComment}" Width="180" Watermark="Комментарий" />
+                            <Button Content="Добавить расход" Command="{Binding AddExpenseCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
 
-        <StackPanel Spacing="4">
-            <TextBlock Text="Заметки" FontSize="11" />
-            <TextBox Text="{Binding Notes}" AcceptsReturn="True" TextWrapping="Wrap" Height="70" />
-        </StackPanel>
+            <!-- ═══════════════════ Публикация и продажа ═══════════════════ -->
+            <TabItem Header="Публикация и продажа">
+                <ScrollViewer>
+                    <StackPanel Spacing="12" Margin="4">
+                        <TextBlock Text="{Binding FirstPublishedDate, StringFormat='Дата первой публикации: {0}', TargetNullValue='Дата первой публикации: —'}" FontWeight="Bold" />
 
-        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-            <Button Content="Отмена" Command="{Binding CancelCommand}" />
-            <Button Content="Сохранить" Command="{Binding SaveCommand}" IsEnabled="{Binding !IsSaving}" />
-        </StackPanel>
-    </StackPanel>
+                        <TextBlock Text="Листинги" FontWeight="Bold" />
+                        <Grid ColumnDefinitions="200,*">
+                            <ListBox Grid.Column="0" ItemsSource="{Binding Listings}" SelectedItem="{Binding SelectedListing}" Height="110">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate x:DataType="dto:ListingDto">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Marketplace}" FontWeight="Bold" />
+                                            <TextBlock Text="{Binding PublishedDate}" FontSize="11" Foreground="Gray" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <StackPanel Grid.Column="1" Spacing="8" Margin="12,0,0,0"
+                                        IsVisible="{Binding SelectedListing, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                <StackPanel Orientation="Horizontal" Spacing="16">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Marketplace" FontSize="11" />
+                                        <AutoCompleteBox ItemsSource="{Binding ListingMarketplaceOptionsList}" Text="{Binding EditListingMarketplace}" Width="160" />
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Цена публикации" FontSize="11" />
+                                        <TextBox Text="{Binding EditListingPriceText}" Width="120" />
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Дата публикации" FontSize="11" />
+                                        <Button Content="{Binding SelectedListing.PublishedDate, TargetNullValue='—'}" Command="{Binding OpenListingDateCommand}" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <Button Content="Сохранить листинг" Command="{Binding SaveListingCommand}" HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </Grid>
+                        <Button Content="Новый листинг" Command="{Binding CreateListingCommand}" HorizontalAlignment="Left" />
+
+                        <Separator />
+
+                        <TextBlock Text="Продажи" FontWeight="Bold" />
+                        <Grid ColumnDefinitions="200,*">
+                            <ListBox Grid.Column="0" ItemsSource="{Binding Sales}" SelectedItem="{Binding SelectedSale}" Height="110">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate x:DataType="dto:SaleDto">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Marketplace}" FontWeight="Bold" />
+                                            <TextBlock Text="{Binding SaleDate}" FontSize="11" Foreground="Gray" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <StackPanel Grid.Column="1" Spacing="8" Margin="12,0,0,0"
+                                        IsVisible="{Binding SelectedSale, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                <StackPanel Orientation="Horizontal" Spacing="16">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Место продажи" FontSize="11" />
+                                        <AutoCompleteBox ItemsSource="{Binding SaleMarketplaceOptionsList}" Text="{Binding EditSaleMarketplace}" Width="160" />
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Дата продажи" FontSize="11" />
+                                        <Button Content="{Binding SelectedSale.SaleDate}" Command="{Binding OpenSaleDateCommand}" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="16">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Цена продажи" FontSize="11" />
+                                        <TextBox Text="{Binding EditSaleItemPriceText}" Width="100" />
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Payout Amount" FontSize="11" />
+                                        <TextBox Text="{Binding EditSalePayoutText}" Width="100" />
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Gross Transaction Amount" FontSize="11" />
+                                        <TextBlock Text="{Binding SelectedSale.GrossTransactionAmount, StringFormat={}{0:C}}" VerticalAlignment="Center" Margin="4,4,0,4" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="16">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Штат продажи" FontSize="11" />
+                                        <TextBox Text="{Binding EditSaleDestinationState}" Width="80" />
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="ZIP покупателя" FontSize="11" />
+                                        <TextBox Text="{Binding EditSaleDestinationZip}" Width="100" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <Button Content="Сохранить продажу" Command="{Binding SaveSaleCommand}" HorizontalAlignment="Left" />
+
+                                <TextBlock Text="Комиссии" FontWeight="Bold" Margin="0,8,0,0" />
+                                <ItemsControl ItemsSource="{Binding Fees}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="dto:SaleFeeDto">
+                                            <Grid ColumnDefinitions="140,*" Margin="0,2">
+                                                <TextBlock Grid.Column="0" Text="{Binding FeeType}" />
+                                                <TextBlock Grid.Column="1" Text="{Binding Amount, StringFormat={}{0:C}}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBox Text="{Binding NewFeeType}" Width="140" Watermark="Тип комиссии" />
+                                    <TextBox Text="{Binding NewFeeAmountText}" Width="90" Watermark="Сумма" />
+                                    <Button Content="Добавить комиссию" Command="{Binding AddFeeCommand}" />
+                                </StackPanel>
+
+                                <TextBlock Text="Финансы" FontWeight="Bold" Margin="0,8,0,0" />
+                                <StackPanel Spacing="2" IsVisible="{Binding Financials, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                    <TextBlock Text="{Binding Financials.SellerGrossRevenue, StringFormat='Выручка продавца: {0:C}'}" />
+                                    <TextBlock Text="{Binding Financials.TotalMarketplaceFees, StringFormat='Комиссии маркетплейса: {0:C}'}" />
+                                    <TextBlock Text="{Binding Financials.NetProceeds, StringFormat='Чистая выручка: {0:C}'}" />
+                                    <TextBlock Text="{Binding Financials.ItemCostBasis, StringFormat='Себестоимость: {0:C}', TargetNullValue='Себестоимость: —'}" />
+                                    <TextBlock Text="{Binding Financials.NetProfit, StringFormat='Чистая прибыль: {0:C}', TargetNullValue='Чистая прибыль: —'}" FontWeight="Bold" />
+                                    <TextBlock Text="{Binding Financials.RoiPercent, StringFormat='ROI: {0}%', TargetNullValue='ROI: —'}" FontWeight="Bold" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                        <Button Content="Новая продажа" Command="{Binding CreateSaleCommand}" HorizontalAlignment="Left" />
+
+                        <Separator />
+                        <StackPanel Orientation="Horizontal" Spacing="24">
+                            <TextBlock Text="{Binding DaysPurchaseToPublish, StringFormat='Дней от покупки до публикации: {0}', TargetNullValue='Дней от покупки до публикации: —'}" />
+                            <TextBlock Text="{Binding DaysListed, StringFormat='Дней в продаже: {0}', TargetNullValue='Дней в продаже: —'}" />
+                            <TextBlock Text="{Binding DaysPurchaseToSale, StringFormat='Дней от покупки до продажи: {0}', TargetNullValue='Дней от покупки до продажи: —'}" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ═══════════════════════════ Возврат ═══════════════════════════ -->
+            <TabItem Header="Возврат">
+                <ScrollViewer>
+                    <StackPanel Spacing="10" Margin="4">
+                        <TextBlock Text="История возвратов" FontWeight="Bold" />
+                        <ItemsControl ItemsSource="{Binding Returns}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="dto:ReturnDto">
+                                    <Border BorderBrush="Gray" BorderThickness="0,0,0,1" Padding="0,4">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding ReturnType}" FontWeight="Bold" />
+                                            <TextBlock Text="{Binding RefundToBuyer, StringFormat='Сумма возврата: {0:C}'}" />
+                                            <TextBlock Text="{Binding ReturnDate}" FontSize="11" Foreground="Gray" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Separator Margin="0,8,0,0" />
+                        <TextBlock Text="Оформить возврат" FontWeight="Bold" />
+                        <TextBlock Text="Сначала выберите продажу на вкладке «Публикация и продажа»." FontSize="11" Foreground="Gray"
+                                   IsVisible="{Binding SelectedSale, Converter={x:Static ObjectConverters.IsNull}}" />
+                        <StackPanel Spacing="8" IsVisible="{Binding SelectedSale, Converter={x:Static ObjectConverters.IsNotNull}}">
+                            <StackPanel Orientation="Horizontal" Spacing="16">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Тип возврата" FontSize="11" />
+                                    <ComboBox ItemsSource="{Binding ReturnTypeOptionsList}" SelectedItem="{Binding NewReturnType}" Width="140" />
+                                </StackPanel>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Сумма возврата" FontSize="11" />
+                                    <TextBox Text="{Binding NewReturnRefundText}" Width="120" />
+                                </StackPanel>
+                                <CheckBox Content="Товар физически возвращён" IsChecked="{Binding NewReturnPhysicallyReturned}" VerticalAlignment="Bottom" />
+                            </StackPanel>
+                            <TextBox Text="{Binding NewReturnComment}" Watermark="Комментарий" />
+                            <Button Content="Оформить возврат" Command="{Binding CreateReturnCommand}" HorizontalAlignment="Left" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ═══════════════════════════ Вложения ═══════════════════════════ -->
+            <TabItem Header="Вложения">
+                <ScrollViewer>
+                    <StackPanel Spacing="16" Margin="4">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Фото" FontWeight="Bold" />
+                            <ItemsControl ItemsSource="{Binding Photos}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="dto:DocumentDto">
+                                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
+                                            <TextBlock Text="{Binding OriginalFilename}" Width="260" />
+                                            <TextBlock Text="{Binding SizeBytes, StringFormat='{}{0} байт'}" Foreground="Gray" Width="90" />
+                                            <Button Content="Открыть"
+                                                    Command="{Binding $parent[Window].((vm:ItemCardDialogViewModel)DataContext).OpenDocumentCommand}"
+                                                    CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Button Content="Добавить фото" Command="{Binding UploadPhotoCommand}" HorizontalAlignment="Left" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Чеки" FontWeight="Bold" />
+                            <ItemsControl ItemsSource="{Binding Receipts}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="dto:DocumentDto">
+                                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
+                                            <TextBlock Text="{Binding OriginalFilename}" Width="260" />
+                                            <TextBlock Text="{Binding SizeBytes, StringFormat='{}{0} байт'}" Foreground="Gray" Width="90" />
+                                            <Button Content="Открыть"
+                                                    Command="{Binding $parent[Window].((vm:ItemCardDialogViewModel)DataContext).OpenDocumentCommand}"
+                                                    CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Button Content="Добавить чек" Command="{Binding UploadReceiptCommand}" HorizontalAlignment="Left" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="PDF" FontWeight="Bold" />
+                            <ItemsControl ItemsSource="{Binding Pdfs}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="dto:DocumentDto">
+                                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
+                                            <TextBlock Text="{Binding OriginalFilename}" Width="260" />
+                                            <TextBlock Text="{Binding SizeBytes, StringFormat='{}{0} байт'}" Foreground="Gray" Width="90" />
+                                            <Button Content="Открыть"
+                                                    Command="{Binding $parent[Window].((vm:ItemCardDialogViewModel)DataContext).OpenDocumentCommand}"
+                                                    CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Button Content="Добавить PDF" Command="{Binding UploadPdfCommand}" HorizontalAlignment="Left" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Другие документы" FontWeight="Bold" />
+                            <ItemsControl ItemsSource="{Binding OtherDocuments}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="dto:DocumentDto">
+                                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
+                                            <TextBlock Text="{Binding OriginalFilename}" Width="260" />
+                                            <TextBlock Text="{Binding SizeBytes, StringFormat='{}{0} байт'}" Foreground="Gray" Width="90" />
+                                            <Button Content="Открыть"
+                                                    Command="{Binding $parent[Window].((vm:ItemCardDialogViewModel)DataContext).OpenDocumentCommand}"
+                                                    CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Button Content="Добавить документ" Command="{Binding UploadOtherDocumentCommand}" HorizontalAlignment="Left" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ═══════════════════════ История изменений ═══════════════════════ -->
+            <TabItem Header="История изменений">
+                <DataGrid ItemsSource="{Binding History}" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="All">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Сущность" Binding="{Binding EntityType}" Width="100" />
+                        <DataGridTextColumn Header="Действие" Binding="{Binding Action}" Width="90" />
+                        <DataGridTextColumn Header="Поле" Binding="{Binding FieldName}" Width="140" />
+                        <DataGridTextColumn Header="Было" Binding="{Binding OldValue}" Width="140" />
+                        <DataGridTextColumn Header="Стало" Binding="{Binding NewValue}" Width="140" />
+                        <DataGridTextColumn Header="Когда" Binding="{Binding ChangedAt}" Width="150" />
+                        <DataGridTextColumn Header="Кто" Binding="{Binding ChangedBy}" Width="120" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
 </Window>

@@ -10,6 +10,7 @@ public sealed class ExpenseDto
     public Guid? ItemId { get; init; }
     public Guid? SaleId { get; init; }
     public Guid? ReturnId { get; init; }
+    public string? PaymentMethod { get; init; }
     public string? Comment { get; init; }
 }
 

@@ -33,15 +33,17 @@ public sealed partial class InventoryViewModel : ViewModelBase
     private readonly ITableSettingsStore _settingsStore;
     private readonly INavigationService _navigation;
     private readonly IDialogService _dialogService;
+    private readonly IFilePickerService _filePickerService;
 
     public InventoryViewModel(IServerApiClient apiClient, ClientSessionState session, ITableSettingsStore settingsStore,
-        INavigationService navigation, IDialogService dialogService)
+        INavigationService navigation, IDialogService dialogService, IFilePickerService filePickerService)
     {
         _apiClient = apiClient;
         _session = session;
         _settingsStore = settingsStore;
         _navigation = navigation;
         _dialogService = dialogService;
+        _filePickerService = filePickerService;
 
         LoadColumnSettings();
     }
@@ -107,9 +109,9 @@ public sealed partial class InventoryViewModel : ViewModelBase
     [RelayCommand]
     private async Task OpenItemCardAsync(InventoryTableRowDto row)
     {
-        var dialogVm = new ItemCardDialogViewModel(row.ItemId, _apiClient);
-        var saved = await _dialogService.ShowAsync<ItemCardDialogViewModel, bool>(dialogVm);
-        if (saved) await LoadAsync();
+        var dialogVm = new ItemCardDialogViewModel(row.ItemId, _apiClient, _dialogService, _filePickerService);
+        await _dialogService.ShowAsync<ItemCardDialogViewModel, bool>(dialogVm);
+        await LoadAsync(); // the card saves each section as it happens, so always refresh the grid afterward
     }
 
     [RelayCommand]

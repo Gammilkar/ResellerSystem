@@ -589,7 +589,7 @@ public sealed class ImportService : IImportService
 
     private async Task<(HashSet<string> OrderIds, HashSet<string> TransactionIds)> ExistingSaleKeysAsync(CancellationToken ct)
     {
-        var sales = await _salesService.ListSalesAsync(ct);
+        var sales = await _salesService.ListSalesAsync(ct: ct);
         var orderIds = new HashSet<string>();
         var transactionIds = new HashSet<string>();
         foreach (var s in sales)
@@ -602,7 +602,7 @@ public sealed class ImportService : IImportService
 
     private async Task<HashSet<string>> ExistingListingKeysAsync(CancellationToken ct)
     {
-        var listings = await _salesService.ListListingsAsync(ct);
+        var listings = await _salesService.ListListingsAsync(ct: ct);
         return listings.Where(l => !string.IsNullOrWhiteSpace(l.ExternalListingId))
             .Select(l => l.ExternalListingId!)
             .ToHashSet();

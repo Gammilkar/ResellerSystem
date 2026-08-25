@@ -51,16 +51,23 @@ public interface IServerApiClient
 
     Task<IReadOnlyList<PurchaseDto>> ListPurchasesAsync(CancellationToken ct = default);
     Task<PurchaseDto> CreatePurchaseAsync(CreatePurchaseRequest request, CancellationToken ct = default);
+    Task<PurchaseDto> GetPurchaseAsync(Guid id, CancellationToken ct = default);
     Task<PurchaseDto> UpdatePurchaseAsync(Guid id, UpdatePurchaseRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<ItemDto>> ListItemsAsync(string? status, CancellationToken ct = default);
     Task<ItemDto> GetItemAsync(Guid id, CancellationToken ct = default);
     Task<ItemDto> UpdateItemAsync(Guid id, UpdateItemRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<InventoryTableRowDto>> ListInventoryTableAsync(CancellationToken ct = default);
 
+    Task<IReadOnlyList<ListingDto>> ListListingsAsync(Guid? itemId = null, CancellationToken ct = default);
     Task<ListingDto> CreateListingAsync(CreateListingRequest request, CancellationToken ct = default);
     Task<ListingDto> UpdateListingAsync(Guid id, UpdateListingRequest request, CancellationToken ct = default);
+    Task<IReadOnlyList<SaleDto>> ListSalesAsync(Guid? itemId = null, CancellationToken ct = default);
     Task<SaleDto> CreateSaleAsync(CreateSaleRequest request, CancellationToken ct = default);
     Task<SaleDto> UpdateSaleAsync(Guid id, UpdateSaleRequest request, CancellationToken ct = default);
+    Task<SaleFeeDto> AddSaleFeeAsync(Guid saleId, CreateSaleFeeRequest request, CancellationToken ct = default);
+    Task<SaleFinancialsDto> GetSaleFinancialsAsync(Guid saleId, CancellationToken ct = default);
+    Task<IReadOnlyList<ReturnDto>> ListReturnsAsync(Guid? itemId = null, CancellationToken ct = default);
+    Task<ReturnDto> CreateReturnAsync(CreateReturnRequest request, CancellationToken ct = default);
 
     Task<IReadOnlyList<SupplierDto>> ListSuppliersAsync(CancellationToken ct = default);
     Task<SupplierDto> GetSupplierAsync(Guid id, CancellationToken ct = default);
@@ -68,6 +75,17 @@ public interface IServerApiClient
     Task<SupplierDto> UpdateSupplierAsync(Guid id, UpdateSupplierRequest request, CancellationToken ct = default);
     Task DeleteSupplierAsync(Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<SupplierPurchaseHistoryRowDto>> GetSupplierPurchaseHistoryAsync(Guid id, CancellationToken ct = default);
+
+    Task<IReadOnlyList<ExpenseDto>> ListExpensesAsync(Guid? itemId = null, Guid? purchaseId = null, Guid? saleId = null, CancellationToken ct = default);
+    Task<ExpenseDto> CreateExpenseAsync(CreateExpenseRequest request, CancellationToken ct = default);
+    Task DeleteExpenseAsync(Guid id, CancellationToken ct = default);
+
+    Task<DocumentDto> UploadDocumentAsync(string filePath, CancellationToken ct = default);
+    Task<DocumentDto> LinkDocumentAsync(Guid documentId, string entityType, Guid entityId, CancellationToken ct = default);
+    Task<IReadOnlyList<DocumentDto>> ListDocumentsForEntityAsync(string entityType, Guid entityId, CancellationToken ct = default);
+    Task<(byte[] Content, string? MimeType, string Filename)> DownloadDocumentAsync(Guid documentId, CancellationToken ct = default);
+
+    Task<IReadOnlyList<AuditLogEntryDto>> GetAuditLogAsync(string? entityType, Guid? entityId, int limit = 200, CancellationToken ct = default);
 
     Task<DashboardSummaryDto> GetDashboardSummaryAsync(CancellationToken ct = default);
 

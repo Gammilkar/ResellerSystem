@@ -15,8 +15,8 @@ public sealed class ExpensesController : ControllerBase
 
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ExpenseDto>>> List(
-        [FromQuery] Guid? saleId, [FromQuery] Guid? purchaseId, CancellationToken ct) =>
-        Ok(await _service.ListAsync(saleId, purchaseId, ct));
+        [FromQuery] Guid? saleId, [FromQuery] Guid? purchaseId, [FromQuery] Guid? itemId, CancellationToken ct) =>
+        Ok(await _service.ListAsync(saleId, purchaseId, itemId, ct));
 
     [HttpPost]
     public async Task<ActionResult<ExpenseDto>> Create([FromBody] CreateExpenseRequest request, CancellationToken ct) =>

@@ -1,25 +1,32 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ResellerSystem.Domain.Shared.Dto;
 using ResellerSystem.Modules.Expenses.Data;
 using ResellerSystem.Modules.Expenses.Domain;
+using ResellerSystem.Server.Application.Audit;
 using ResellerSystem.Server.Application.Exceptions;
+using ResellerSystem.Server.Domain.Abstractions;
 
 namespace ResellerSystem.Modules.Expenses.Application;
 
 public interface IExpensesService
 {
     Task<ExpenseDto> CreateAsync(CreateExpenseRequest request, CancellationToken ct = default);
-    Task<IReadOnlyList<ExpenseDto>> ListAsync(Guid? saleId, Guid? purchaseId, CancellationToken ct = default);
+    Task<IReadOnlyList<ExpenseDto>> ListAsync(Guid? saleId, Guid? purchaseId, Guid? itemId = null, CancellationToken ct = default);
     Task DeleteAsync(Guid id, CancellationToken ct = default);
 }
 
 public sealed class ExpensesService : IExpensesService
 {
     private readonly IExpensesDbContextFactory _dbContextFactory;
+    private readonly IAuditLogger _auditLogger;
+    private readonly ICurrentUserContext _currentUser;
 
-    public ExpensesService(IExpensesDbContextFactory dbContextFactory) => _dbContextFactory = dbContextFactory;
+    public ExpensesService(IExpensesDbContextFactory dbContextFactory, IAuditLogger auditLogger, ICurrentUserContext currentUser)
+    {
+        _dbContextFactory = dbContextFactory;
+        _auditLogger = auditLogger;
+        _currentUser = currentUser;
+    }
 
     public async Task<ExpenseDto> CreateAsync(CreateExpenseRequest request, CancellationToken ct = default)
     {
@@ -34,15 +41,17 @@ public sealed class ExpensesService : IExpensesService
         db.Expenses.Add(expense);
         await db.SaveChangesAsync(ct);
 
+        await _auditLogger.LogAsync(new AuditEntry("Expense", expense.Id, "Created", _currentUser.DisplayName, "manual"), ct);
         return ToDto(expense);
     }
 
-    public async Task<IReadOnlyList<ExpenseDto>> ListAsync(Guid? saleId, Guid? purchaseId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<ExpenseDto>> ListAsync(Guid? saleId, Guid? purchaseId, Guid? itemId = null, CancellationToken ct = default)
     {
         await using var db = _dbContextFactory.CreateForCurrentTenant();
         var query = db.Expenses.AsQueryable();
         if (saleId is not null) query = query.Where(e => e.SaleId == saleId);
         if (purchaseId is not null) query = query.Where(e => e.PurchaseId == purchaseId);
+        if (itemId is not null) query = query.Where(e => e.ItemId == itemId);
 
         return await query.OrderByDescending(e => e.ExpenseDate).Select(e => ToDto(e)).ToListAsync(ct);
     }
@@ -54,6 +63,8 @@ public sealed class ExpensesService : IExpensesService
             ?? throw new NotFoundException("EXPENSE_NOT_FOUND", "Expense was not found.");
         expense.SoftDelete();
         await db.SaveChangesAsync(ct);
+
+        await _auditLogger.LogAsync(new AuditEntry("Expense", expense.Id, "Deleted", _currentUser.DisplayName, "manual"), ct);
     }
 
     private static ExpenseDto ToDto(Expense e) => new()
@@ -66,6 +77,7 @@ public sealed class ExpensesService : IExpensesService
         ItemId = e.ItemId,
         SaleId = e.SaleId,
         ReturnId = e.ReturnId,
+        PaymentMethod = e.PaymentMethod,
         Comment = e.Comment
     };
 }

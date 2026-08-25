@@ -95,4 +95,7 @@ public sealed class UpdatePurchaseRequest
     public Guid? SupplierId { get; init; }
     public string? PurchaseType { get; init; }
     public DateOnly? PurchaseDate { get; init; }
+    public bool? UsedResellerPermit { get; init; }
+    public decimal? SalesTaxAmount { get; init; }
+    public decimal? SalesTaxRate { get; init; }
 }

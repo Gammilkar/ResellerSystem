@@ -13,18 +13,18 @@ namespace ResellerSystem.Modules.Sales.Application;
 public interface ISalesService
 {
     Task<ListingDto> CreateListingAsync(CreateListingRequest request, CancellationToken ct = default);
-    Task<IReadOnlyList<ListingDto>> ListListingsAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<ListingDto>> ListListingsAsync(Guid? itemId = null, CancellationToken ct = default);
     Task<ListingDto> UpdateListingAsync(Guid id, UpdateListingRequest request, CancellationToken ct = default);
 
     Task<SaleDto> CreateSaleAsync(CreateSaleRequest request, CancellationToken ct = default);
-    Task<IReadOnlyList<SaleDto>> ListSalesAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<SaleDto>> ListSalesAsync(Guid? itemId = null, CancellationToken ct = default);
     Task<SaleDto> GetSaleAsync(Guid id, CancellationToken ct = default);
     Task<SaleDto> UpdateSaleAsync(Guid id, UpdateSaleRequest request, CancellationToken ct = default);
     Task<SaleFeeDto> AddFeeAsync(Guid saleId, CreateSaleFeeRequest request, CancellationToken ct = default);
     Task<SaleFinancialsDto> GetFinancialsAsync(Guid saleId, CancellationToken ct = default);
 
     Task<ReturnDto> CreateReturnAsync(CreateReturnRequest request, CancellationToken ct = default);
-    Task<IReadOnlyList<ReturnDto>> ListReturnsAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<ReturnDto>> ListReturnsAsync(Guid? itemId = null, CancellationToken ct = default);
 }
 
 public sealed class SalesService : ISalesService
@@ -74,10 +74,12 @@ public sealed class SalesService : ISalesService
         return ToDto(listing);
     }
 
-    public async Task<IReadOnlyList<ListingDto>> ListListingsAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<ListingDto>> ListListingsAsync(Guid? itemId = null, CancellationToken ct = default)
     {
         await using var db = _dbContextFactory.CreateForCurrentTenant();
-        return await db.Listings.OrderByDescending(l => l.CreatedAt).Select(l => ToDto(l)).ToListAsync(ct);
+        var query = db.Listings.AsQueryable();
+        if (itemId is not null) query = query.Where(l => l.ItemId == itemId);
+        return await query.OrderByDescending(l => l.CreatedAt).Select(l => ToDto(l)).ToListAsync(ct);
     }
 
     public async Task<ListingDto> UpdateListingAsync(Guid id, UpdateListingRequest request, CancellationToken ct = default)
@@ -105,6 +107,11 @@ public sealed class SalesService : ISalesService
         {
             TrackChange("PublishedDate", listing.PublishedDate?.ToString("O"), request.PublishedDate.Value.ToString("O"));
             listing.PublishedDate = request.PublishedDate;
+        }
+        if (request.ListingPrice is not null)
+        {
+            TrackChange("ListingPrice", listing.ListingPrice?.ToString(), request.ListingPrice.Value.ToString());
+            listing.ListingPrice = request.ListingPrice;
         }
         listing.UpdatedBy = username;
         listing.Touch();
@@ -144,10 +151,12 @@ public sealed class SalesService : ISalesService
         return await GetSaleAsync(sale.Id, ct);
     }
 
-    public async Task<IReadOnlyList<SaleDto>> ListSalesAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<SaleDto>> ListSalesAsync(Guid? itemId = null, CancellationToken ct = default)
     {
         await using var db = _dbContextFactory.CreateForCurrentTenant();
-        var sales = await db.Sales.Include(s => s.Fees).OrderByDescending(s => s.SaleDate).ToListAsync(ct);
+        var query = db.Sales.Include(s => s.Fees).AsQueryable();
+        if (itemId is not null) query = query.Where(s => s.ItemId == itemId);
+        var sales = await query.OrderByDescending(s => s.SaleDate).ToListAsync(ct);
         return sales.Select(ToDto).ToList();
     }
 
@@ -199,6 +208,21 @@ public sealed class SalesService : ISalesService
             var newGross = sale.ItemSalePrice + sale.BuyerPaidShipping + sale.BuyerPaidSalesTax + sale.Handling - sale.SellerDiscount;
             TrackChange("GrossTransactionAmount", sale.GrossTransactionAmount.ToString(), newGross.ToString());
             sale.GrossTransactionAmount = newGross;
+        }
+        if (request.PayoutAmount is not null)
+        {
+            TrackChange("PayoutAmount", sale.PayoutAmount.ToString(), request.PayoutAmount.Value.ToString());
+            sale.PayoutAmount = request.PayoutAmount.Value;
+        }
+        if (request.DestinationState is not null)
+        {
+            TrackChange("DestinationState", sale.DestinationState, request.DestinationState);
+            sale.DestinationState = request.DestinationState;
+        }
+        if (request.DestinationZip is not null)
+        {
+            TrackChange("DestinationZip", sale.DestinationZip, request.DestinationZip);
+            sale.DestinationZip = request.DestinationZip;
         }
         sale.UpdatedBy = username;
         sale.Touch();
@@ -284,10 +308,12 @@ public sealed class SalesService : ISalesService
         return ToDto(ret);
     }
 
-    public async Task<IReadOnlyList<ReturnDto>> ListReturnsAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<ReturnDto>> ListReturnsAsync(Guid? itemId = null, CancellationToken ct = default)
     {
         await using var db = _dbContextFactory.CreateForCurrentTenant();
-        return await db.Returns.OrderByDescending(r => r.CreatedAt).Select(r => ToDto(r)).ToListAsync(ct);
+        var query = db.Returns.AsQueryable();
+        if (itemId is not null) query = query.Where(r => r.ItemId == itemId);
+        return await query.OrderByDescending(r => r.CreatedAt).Select(r => ToDto(r)).ToListAsync(ct);
     }
 
     private static ListingDto ToDto(Listing l) => new()
