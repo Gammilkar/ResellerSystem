@@ -49,25 +49,15 @@
             <StackPanel Spacing="10">
                 <TextBlock Text="Table Settings" FontWeight="Bold" />
 
-                <StackPanel Orientation="Horizontal" Spacing="24">
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Text size" FontSize="11" />
-                        <NumericUpDown Value="{Binding DataFontSize}" Minimum="9" Maximum="24" Increment="1" Width="120" />
-                    </StackPanel>
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Default row height" FontSize="11" />
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <NumericUpDown Value="{Binding RowHeight}" Minimum="20" Maximum="120" Increment="2" Width="120" />
-                            <Button Content="Apply to All Rows" Command="{Binding ApplyRowHeightToAllCommand}" VerticalAlignment="Center" />
-                        </StackPanel>
-                        <TextBlock Text="Каждую строку можно потянуть мышкой за левый край (столбец ⇕), как в Excel."
-                                   FontSize="10" Foreground="Gray" TextWrapping="Wrap" MaxWidth="320" />
-                    </StackPanel>
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Text size" FontSize="11" />
+                    <NumericUpDown Value="{Binding DataFontSize}" Minimum="9" Maximum="24" Increment="1" Width="120" />
                 </StackPanel>
+                <TextBlock Text="Высота строки подстраивается автоматически под текст (перенос по словам, как в Excel)."
+                           FontSize="10" Foreground="Gray" TextWrapping="Wrap" MaxWidth="400" />
 
                 <TextBlock Text="Columns" FontSize="11" />
                 <WrapPanel>
-                    <CheckBox Content="Высота строки" IsChecked="{Binding ShowRowHeightColumn}" Margin="0,0,16,4" />
                     <CheckBox Content="№ товара" IsChecked="{Binding ShowItemNumberColumn}" Margin="0,0,16,4" />
                     <CheckBox Content="Наименование" IsChecked="{Binding ShowNameColumn}" Margin="0,0,16,4" />
                     <CheckBox Content="Статус" IsChecked="{Binding ShowStatusColumn}" Margin="0,0,16,4" />
@@ -101,55 +91,112 @@
                     <Setter Property="Foreground" Value="Black" />
                     <Setter Property="FontSize" Value="{Binding HeaderFontSize}" />
                 </Style>
-                <!-- Avalonia's DataGrid has no drag handle to resize one
-                     row (only columns) — this is the real per-row
-                     mechanism: each row's own Height, editable via the
-                     "Высота строки" column below, same as any other cell. -->
-                <Style Selector="DataGridRow">
-                    <Setter Property="Height" Value="{Binding RowHeight}" />
-                </Style>
             </DataGrid.Styles>
             <DataGrid.Columns>
-                <DataGridTemplateColumn Header="⇕" Width="40" CanUserResize="False"
-                                        IsVisible="{Binding ShowRowHeightColumn}">
+                <DataGridTemplateColumn Header="№ товара" Width="90" SortMemberPath="ItemNumber"
+                                        IsVisible="{Binding ShowItemNumberColumn}">
                     <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate x:DataType="vm:InventoryRowViewModel">
-                            <Border Background="#10000000" Cursor="SizeNorthSouth"
-                                    ToolTip.Tip="Потяните вверх/вниз, чтобы изменить высоту строки"
-                                    AttachedToVisualTree="RowHeightGrip_AttachedToVisualTree"
-                                    DetachedFromVisualTree="RowHeightGrip_DetachedFromVisualTree">
-                                <TextBlock Text="⇕" FontSize="11" Foreground="Gray"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </Border>
+                        <DataTemplate x:DataType="dto:InventoryTableRowDto">
+                            <TextBlock Text="{Binding ItemNumber}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="№ товара" Binding="{Binding ItemNumber}" Width="90"
-                                    IsVisible="{Binding ShowItemNumberColumn}" />
-                <DataGridTextColumn Header="Наименование" Binding="{Binding Name}" Width="220"
-                                    IsVisible="{Binding ShowNameColumn}" />
-                <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="110"
-                                    IsVisible="{Binding ShowStatusColumn}" />
-                <DataGridTextColumn Header="Дата покупки" Binding="{Binding PurchaseDate}" Width="110"
-                                    IsVisible="{Binding ShowPurchaseDateColumn}" />
-                <DataGridTextColumn Header="Место покупки" Binding="{Binding PurchaseSourceName}" Width="150"
-                                    IsVisible="{Binding ShowPurchaseSourceColumn}" />
-                <DataGridTextColumn Header="Тип закупки" Binding="{Binding PurchaseType}" Width="120"
-                                    IsVisible="{Binding ShowPurchaseTypeColumn}" />
-                <DataGridTextColumn Header="Итоговая себестоимость" Binding="{Binding CostBasis, StringFormat={}{0:C}}" Width="150"
-                                    IsVisible="{Binding ShowCostBasisColumn}" />
-                <DataGridTextColumn Header="Дата публикации" Binding="{Binding ListingPublishedDate}" Width="130"
-                                    IsVisible="{Binding ShowListingDateColumn}" />
-                <DataGridTextColumn Header="Marketplace" Binding="{Binding ListingMarketplace}" Width="120"
-                                    IsVisible="{Binding ShowMarketplaceColumn}" />
-                <DataGridTextColumn Header="Дата продажи" Binding="{Binding SaleDate}" Width="110"
-                                    IsVisible="{Binding ShowSaleDateColumn}" />
-                <DataGridTextColumn Header="Место продажи" Binding="{Binding SaleMarketplace}" Width="130"
-                                    IsVisible="{Binding ShowSaleMarketplaceColumn}" />
-                <DataGridTextColumn Header="Цена продажи" Binding="{Binding SalePrice, StringFormat={}{0:C}}" Width="120"
-                                    IsVisible="{Binding ShowSalePriceColumn}" />
-                <DataGridTextColumn Header="Дней в продаже" Binding="{Binding DaysListed}" Width="120"
-                                    IsVisible="{Binding ShowDaysListedColumn}" />
+                <DataGridTemplateColumn Header="Наименование" Width="220" SortMemberPath="Name"
+                                        IsVisible="{Binding ShowNameColumn}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:InventoryTableRowDto">
+                            <TextBlock Text="{Binding Name}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Статус" Width="110" SortMemberPath="Status"
+                                        IsVisible="{Binding ShowStatusColumn}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:InventoryTableRowDto">
+                            <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Дата покупки" Width="110" SortMemberPath="PurchaseDate"
+                                        IsVisible="{Binding ShowPurchaseDateColumn}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:InventoryTableRowDto">
+                            <TextBlock Text="{Binding PurchaseDate}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Место покупки" Width="150" SortMemberPath="PurchaseSourceName"
+                                        IsVisible="{Binding ShowPurchaseSourceColumn}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:InventoryTableRowDto">
+                            <TextBlock Text="{Binding PurchaseSourceName}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Тип закупки" Width="120" SortMemberPath="PurchaseType"
+                                        IsVisible="{Binding ShowPurchaseTypeColumn}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:InventoryTableRowDto">
+                            <TextBlock Text="{Binding PurchaseType}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Итоговая себестоимость" Width="150" SortMemberPath="CostBasis"
+                                        IsVisible="{Binding ShowCostBasisColumn}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:InventoryTableRowDto">
+                            <TextBlock Text="{Binding CostBasis, StringFormat={}{0:C}}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Дата публикации" Width="130" SortMemberPath="ListingPublishedDate"
+                                        IsVisible="{Binding ShowListingDateColumn}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:InventoryTableRowDto">
+                            <TextBlock Text="{Binding ListingPublishedDate}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Marketplace" Width="120" SortMemberPath="ListingMarketplace"
+                                        IsVisible="{Binding ShowMarketplaceColumn}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:InventoryTableRowDto">
+                            <TextBlock Text="{Binding ListingMarketplace}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Дата продажи" Width="110" SortMemberPath="SaleDate"
+                                        IsVisible="{Binding ShowSaleDateColumn}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:InventoryTableRowDto">
+                            <TextBlock Text="{Binding SaleDate}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Место продажи" Width="130" SortMemberPath="SaleMarketplace"
+                                        IsVisible="{Binding ShowSaleMarketplaceColumn}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:InventoryTableRowDto">
+                            <TextBlock Text="{Binding SaleMarketplace}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Цена продажи" Width="120" SortMemberPath="SalePrice"
+                                        IsVisible="{Binding ShowSalePriceColumn}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:InventoryTableRowDto">
+                            <TextBlock Text="{Binding SalePrice, StringFormat={}{0:C}}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Дней в продаже" Width="120" SortMemberPath="DaysListed"
+                                        IsVisible="{Binding ShowDaysListedColumn}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:InventoryTableRowDto">
+                            <TextBlock Text="{Binding DaysListed}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
     </DockPanel>

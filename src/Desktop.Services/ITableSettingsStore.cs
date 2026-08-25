@@ -4,13 +4,11 @@ namespace ResellerSystem.Desktop.Services;
 
 public sealed record TableSettings(
     double FontSize,
-    double RowHeight,
-    Dictionary<string, bool> ColumnVisibility,
-    Dictionary<Guid, double>? RowHeightOverrides = null);
+    Dictionary<string, bool> ColumnVisibility);
 
-/// <summary>Per-grid display preferences (font size, row height, which
-/// columns are shown) — local to this machine/user, not synced to the
-/// server. Plain JSON, nothing sensitive here (unlike TrustedDeviceStore).</summary>
+/// <summary>Per-grid display preferences (font size, which columns are
+/// shown) — local to this machine/user, not synced to the server. Plain
+/// JSON, nothing sensitive here (unlike TrustedDeviceStore).</summary>
 public interface ITableSettingsStore
 {
     TableSettings? Load(string tableKey);

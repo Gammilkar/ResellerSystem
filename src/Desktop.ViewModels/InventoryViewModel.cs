@@ -17,27 +17,21 @@ namespace ResellerSystem.Desktop.ViewModels;
 /// InventoryTableReader). The X-Database-Id header is attached by
 /// NavigationService.ShowInventory before this loads.
 ///
-/// Display settings (font size, row height, which columns show) persist
-/// locally via ITableSettingsStore. Avalonia's DataGrid has no drag
-/// handle to resize an individual row (confirmed against the assembly —
-/// only column-resize infrastructure exists there), so per-row height is
-/// done the way any other cell value is set: each row is wrapped in
-/// InventoryRowViewModel with its own RowHeight, editable through a
-/// dedicated "Высота строки" column, and DataGridRow's Style binds Height
-/// to it (DataGridRow's DataContext is the row item, same mechanism as
-/// any other per-row binding).
+/// Display settings (font size, which columns show) persist locally via
+/// ITableSettingsStore. Row height is not user-adjustable — each
+/// DataGridTemplateColumn's TextBlock wraps (TextWrapping="Wrap"), and
+/// Avalonia's DataGrid rows auto-size to the tallest wrapped cell, the
+/// same "AutoFit Row Height" behavior Excel applies to wrapped text.
 /// </summary>
 public sealed partial class InventoryViewModel : ViewModelBase
 {
     private const string TableKey = "inventory";
     private const double DefaultFontSize = 13;
-    private const double DefaultRowHeight = 32;
 
     private readonly IServerApiClient _apiClient;
     private readonly ClientSessionState _session;
     private readonly ITableSettingsStore _settingsStore;
     private readonly INavigationService _navigation;
-    private Dictionary<Guid, double> _rowHeightOverrides = new();
 
     public InventoryViewModel(IServerApiClient apiClient, ClientSessionState session, ITableSettingsStore settingsStore, INavigationService navigation)
     {
@@ -49,7 +43,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
         LoadColumnSettings();
     }
 
-    public ObservableCollection<InventoryRowViewModel> TableRows { get; } = new();
+    public ObservableCollection<InventoryTableRowDto> TableRows { get; } = new();
 
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private string? _errorMessage;
@@ -65,11 +59,6 @@ public sealed partial class InventoryViewModel : ViewModelBase
     // Display settings
     [ObservableProperty] private bool _showSettingsPanel;
     [ObservableProperty] private double _dataFontSize = DefaultFontSize;
-
-    /// <summary>Default height newly-loaded rows start at, and what
-    /// "Apply to all rows" resets every row back to. Each row can still be
-    /// changed individually afterward via the "Высота строки" column.</summary>
-    [ObservableProperty] private double _rowHeight = DefaultRowHeight;
 
     public double HeaderFontSize => DataFontSize + 1;
     partial void OnDataFontSizeChanged(double value) => OnPropertyChanged(nameof(HeaderFontSize));
@@ -90,7 +79,6 @@ public sealed partial class InventoryViewModel : ViewModelBase
     [ObservableProperty] private bool _showSaleMarketplaceColumn = true;
     [ObservableProperty] private bool _showSalePriceColumn = true;
     [ObservableProperty] private bool _showDaysListedColumn = true;
-    [ObservableProperty] private bool _showRowHeightColumn = true;
 
     [RelayCommand]
     private async Task LoadAsync()
@@ -101,11 +89,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
         {
             var rows = await _apiClient.ListInventoryTableAsync();
             TableRows.Clear();
-            foreach (var r in rows)
-            {
-                var height = _rowHeightOverrides.GetValueOrDefault(r.ItemId, RowHeight);
-                TableRows.Add(new InventoryRowViewModel(r, height));
-            }
+            foreach (var r in rows) TableRows.Add(r);
         }
         catch (ServerApiException ex)
         {
@@ -115,12 +99,6 @@ public sealed partial class InventoryViewModel : ViewModelBase
         {
             IsLoading = false;
         }
-    }
-
-    [RelayCommand]
-    private void ApplyRowHeightToAll()
-    {
-        foreach (var row in TableRows) row.RowHeight = RowHeight;
     }
 
     [RelayCommand]
@@ -134,9 +112,8 @@ public sealed partial class InventoryViewModel : ViewModelBase
     }
 
     /// <summary>Called by MainWindow on window Closing, in addition to the
-    /// Back button and settings-panel close, so dragged row heights and
-    /// other table settings survive quitting the app without navigating
-    /// away from Inventory first.</summary>
+    /// Back button and settings-panel close, so table settings survive
+    /// quitting the app without navigating away from Inventory first.</summary>
     public void PersistSettings() => SaveColumnSettings();
 
     private void LoadColumnSettings()
@@ -145,8 +122,6 @@ public sealed partial class InventoryViewModel : ViewModelBase
         if (saved is null) return;
 
         DataFontSize = saved.FontSize;
-        RowHeight = saved.RowHeight;
-        _rowHeightOverrides = saved.RowHeightOverrides is { } overrides ? new Dictionary<Guid, double>(overrides) : new();
 
         bool Get(string key, bool fallback) => saved.ColumnVisibility.TryGetValue(key, out var v) ? v : fallback;
         ShowItemNumberColumn = Get(nameof(ShowItemNumberColumn), ShowItemNumberColumn);
@@ -162,7 +137,6 @@ public sealed partial class InventoryViewModel : ViewModelBase
         ShowSaleMarketplaceColumn = Get(nameof(ShowSaleMarketplaceColumn), ShowSaleMarketplaceColumn);
         ShowSalePriceColumn = Get(nameof(ShowSalePriceColumn), ShowSalePriceColumn);
         ShowDaysListedColumn = Get(nameof(ShowDaysListedColumn), ShowDaysListedColumn);
-        ShowRowHeightColumn = Get(nameof(ShowRowHeightColumn), ShowRowHeightColumn);
     }
 
     private void SaveColumnSettings()
@@ -181,11 +155,9 @@ public sealed partial class InventoryViewModel : ViewModelBase
             [nameof(ShowSaleDateColumn)] = ShowSaleDateColumn,
             [nameof(ShowSaleMarketplaceColumn)] = ShowSaleMarketplaceColumn,
             [nameof(ShowSalePriceColumn)] = ShowSalePriceColumn,
-            [nameof(ShowDaysListedColumn)] = ShowDaysListedColumn,
-            [nameof(ShowRowHeightColumn)] = ShowRowHeightColumn
+            [nameof(ShowDaysListedColumn)] = ShowDaysListedColumn
         };
-        var rowHeights = TableRows.ToDictionary(r => r.ItemId, r => r.RowHeight);
-        _settingsStore.Save(TableKey, new TableSettings(DataFontSize, RowHeight, visibility, rowHeights));
+        _settingsStore.Save(TableKey, new TableSettings(DataFontSize, visibility));
     }
 
     [RelayCommand]
@@ -242,7 +214,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
     [RelayCommand]
     private void Back()
     {
-        PersistSettings(); // so per-row height edits aren't lost even if the settings panel was never opened
+        PersistSettings(); // so column/font choices aren't lost even if the settings panel was never opened
         _navigation.ShowDashboard();
     }
 }
