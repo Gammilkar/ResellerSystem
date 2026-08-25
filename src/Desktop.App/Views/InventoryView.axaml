@@ -90,6 +90,7 @@
                   CanUserSortColumns="True"
                   IsReadOnly="True"
                   GridLinesVisibility="All"
+                  ColumnHeaderHeight="44"
                   FontSize="{Binding DataFontSize}">
             <DataGrid.Styles>
                 <Style Selector="DataGridColumnHeader">
@@ -124,8 +125,14 @@
                  by default, which overrides simple ambient inheritance for
                  anything that isn't a bare TextBlock. -->
             <DataGrid.Columns>
-                <DataGridTemplateColumn Header="№ товара" Width="90" SortMemberPath="ItemNumber"
+                <DataGridTemplateColumn Width="90" SortMemberPath="ItemNumber"
                                         IsVisible="{Binding ShowItemNumberColumn}">
+                    <DataGridTemplateColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="№ товара" TextWrapping="Wrap" FontWeight="Bold" Foreground="Black"
+                                       FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).HeaderFontSize}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
                             <TextBlock Text="{Binding ItemNumber}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center"
@@ -133,8 +140,14 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Наименование" Width="220" SortMemberPath="Name"
+                <DataGridTemplateColumn Width="220" SortMemberPath="Name"
                                         IsVisible="{Binding ShowNameColumn}">
+                    <DataGridTemplateColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Наименование" TextWrapping="Wrap" FontWeight="Bold" Foreground="Black"
+                                       FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).HeaderFontSize}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
                             <Button Classes="cell-link"
@@ -146,8 +159,14 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Статус" Width="150" SortMemberPath="Status"
+                <DataGridTemplateColumn Width="150" SortMemberPath="Status"
                                         IsVisible="{Binding ShowStatusColumn}">
+                    <DataGridTemplateColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Статус" TextWrapping="Wrap" FontWeight="Bold" Foreground="Black"
+                                       FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).HeaderFontSize}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
                             <ComboBox ItemsSource="{x:Static vm:StatusOptions.All}"
@@ -160,8 +179,14 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Дата покупки" Width="110" SortMemberPath="PurchaseDate"
+                <DataGridTemplateColumn Width="110" SortMemberPath="PurchaseDate"
                                         IsVisible="{Binding ShowPurchaseDateColumn}">
+                    <DataGridTemplateColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Дата покупки" TextWrapping="Wrap" FontWeight="Bold" Foreground="Black"
+                                       FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).HeaderFontSize}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
                             <Button Classes="cell-link"
@@ -173,8 +198,14 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Место покупки" Width="150" SortMemberPath="PurchaseSourceName"
+                <DataGridTemplateColumn Width="150" SortMemberPath="PurchaseSourceName"
                                         IsVisible="{Binding ShowPurchaseSourceColumn}">
+                    <DataGridTemplateColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Место покупки" TextWrapping="Wrap" FontWeight="Bold" Foreground="Black"
+                                       FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).HeaderFontSize}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
                             <Button Classes="cell-link"
@@ -186,8 +217,14 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Тип закупки" Width="150" SortMemberPath="PurchaseType"
+                <DataGridTemplateColumn Width="150" SortMemberPath="PurchaseType"
                                         IsVisible="{Binding ShowPurchaseTypeColumn}">
+                    <DataGridTemplateColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Тип закупки" TextWrapping="Wrap" FontWeight="Bold" Foreground="Black"
+                                       FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).HeaderFontSize}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
                             <ComboBox ItemsSource="{x:Static vm:PurchaseTypeOptions.All}"
@@ -200,8 +237,14 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Итоговая себестоимость" Width="150" SortMemberPath="CostBasis"
+                <DataGridTemplateColumn Width="150" SortMemberPath="CostBasis"
                                         IsVisible="{Binding ShowCostBasisColumn}">
+                    <DataGridTemplateColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Итоговая себестоимость" TextWrapping="Wrap" FontWeight="Bold" Foreground="Black"
+                                       FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).HeaderFontSize}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
                             <TextBlock Text="{Binding CostBasis, StringFormat={}{0:C}}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center"
@@ -209,8 +252,14 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Дата публикации" Width="130" SortMemberPath="ListingPublishedDate"
+                <DataGridTemplateColumn Width="130" SortMemberPath="ListingPublishedDate"
                                         IsVisible="{Binding ShowListingDateColumn}">
+                    <DataGridTemplateColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Дата публикации" TextWrapping="Wrap" FontWeight="Bold" Foreground="Black"
+                                       FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).HeaderFontSize}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
                             <Button Classes="cell-link"
@@ -222,8 +271,14 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Marketplace" Width="120" SortMemberPath="ListingMarketplace"
+                <DataGridTemplateColumn Width="120" SortMemberPath="ListingMarketplace"
                                         IsVisible="{Binding ShowMarketplaceColumn}">
+                    <DataGridTemplateColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Marketplace" TextWrapping="Wrap" FontWeight="Bold" Foreground="Black"
+                                       FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).HeaderFontSize}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
                             <AutoCompleteBox ItemsSource="{x:Static vm:MarketplaceOptions.Listing}"
@@ -236,8 +291,14 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Дата продажи" Width="110" SortMemberPath="SaleDate"
+                <DataGridTemplateColumn Width="110" SortMemberPath="SaleDate"
                                         IsVisible="{Binding ShowSaleDateColumn}">
+                    <DataGridTemplateColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Дата продажи" TextWrapping="Wrap" FontWeight="Bold" Foreground="Black"
+                                       FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).HeaderFontSize}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
                             <Button Classes="cell-link"
@@ -249,8 +310,14 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Место продажи" Width="130" SortMemberPath="SaleMarketplace"
+                <DataGridTemplateColumn Width="130" SortMemberPath="SaleMarketplace"
                                         IsVisible="{Binding ShowSaleMarketplaceColumn}">
+                    <DataGridTemplateColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Место продажи" TextWrapping="Wrap" FontWeight="Bold" Foreground="Black"
+                                       FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).HeaderFontSize}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
                             <AutoCompleteBox ItemsSource="{x:Static vm:MarketplaceOptions.Sale}"
@@ -263,8 +330,14 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Цена продажи" Width="120" SortMemberPath="SalePrice"
+                <DataGridTemplateColumn Width="120" SortMemberPath="SalePrice"
                                         IsVisible="{Binding ShowSalePriceColumn}">
+                    <DataGridTemplateColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Цена продажи" TextWrapping="Wrap" FontWeight="Bold" Foreground="Black"
+                                       FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).HeaderFontSize}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
                             <TextBox Text="{Binding SalePrice, Mode=OneWay, StringFormat={}{0:0.00}}"
@@ -274,8 +347,14 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Дней в продаже" Width="120" SortMemberPath="DaysListed"
+                <DataGridTemplateColumn Width="120" SortMemberPath="DaysListed"
                                         IsVisible="{Binding ShowDaysListedColumn}">
+                    <DataGridTemplateColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Дней в продаже" TextWrapping="Wrap" FontWeight="Bold" Foreground="Black"
+                                       FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).HeaderFontSize}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
                             <TextBlock Text="{Binding DaysListed}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center"
