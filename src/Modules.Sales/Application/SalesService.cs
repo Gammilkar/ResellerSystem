@@ -14,10 +14,12 @@ public interface ISalesService
 {
     Task<ListingDto> CreateListingAsync(CreateListingRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<ListingDto>> ListListingsAsync(CancellationToken ct = default);
+    Task<ListingDto> UpdateListingAsync(Guid id, UpdateListingRequest request, CancellationToken ct = default);
 
     Task<SaleDto> CreateSaleAsync(CreateSaleRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<SaleDto>> ListSalesAsync(CancellationToken ct = default);
     Task<SaleDto> GetSaleAsync(Guid id, CancellationToken ct = default);
+    Task<SaleDto> UpdateSaleAsync(Guid id, UpdateSaleRequest request, CancellationToken ct = default);
     Task<SaleFeeDto> AddFeeAsync(Guid saleId, CreateSaleFeeRequest request, CancellationToken ct = default);
     Task<SaleFinancialsDto> GetFinancialsAsync(Guid saleId, CancellationToken ct = default);
 
@@ -78,6 +80,41 @@ public sealed class SalesService : ISalesService
         return await db.Listings.OrderByDescending(l => l.CreatedAt).Select(l => ToDto(l)).ToListAsync(ct);
     }
 
+    public async Task<ListingDto> UpdateListingAsync(Guid id, UpdateListingRequest request, CancellationToken ct = default)
+    {
+        await using var db = _dbContextFactory.CreateForCurrentTenant();
+
+        var listing = await db.Listings.FirstOrDefaultAsync(l => l.Id == id, ct)
+            ?? throw new NotFoundException("LISTING_NOT_FOUND", "Listing was not found.");
+
+        var username = _currentUser.DisplayName;
+        var changes = new List<AuditEntry>();
+        void TrackChange(string field, string? oldValue, string? newValue)
+        {
+            if (oldValue != newValue) changes.Add(new AuditEntry("Listing", listing.Id, "Updated", username, "manual", field, oldValue, newValue));
+        }
+
+        if (request.Marketplace is not null)
+        {
+            if (string.IsNullOrWhiteSpace(request.Marketplace))
+                throw new ValidationFailedException(new[] { "Marketplace is required." });
+            TrackChange("Marketplace", listing.Marketplace, request.Marketplace.Trim());
+            listing.Marketplace = request.Marketplace.Trim();
+        }
+        if (request.PublishedDate is not null)
+        {
+            TrackChange("PublishedDate", listing.PublishedDate?.ToString("O"), request.PublishedDate.Value.ToString("O"));
+            listing.PublishedDate = request.PublishedDate;
+        }
+        listing.UpdatedBy = username;
+        listing.Touch();
+
+        await db.SaveChangesAsync(ct);
+        if (changes.Count > 0) await _auditLogger.LogManyAsync(changes, ct);
+
+        return ToDto(listing);
+    }
+
     public async Task<SaleDto> CreateSaleAsync(CreateSaleRequest request, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(request.Marketplace))
@@ -120,6 +157,56 @@ public sealed class SalesService : ISalesService
         var sale = await db.Sales.Include(s => s.Fees).FirstOrDefaultAsync(s => s.Id == id, ct)
             ?? throw new NotFoundException("SALE_NOT_FOUND", "Sale was not found.");
         return ToDto(sale);
+    }
+
+    public async Task<SaleDto> UpdateSaleAsync(Guid id, UpdateSaleRequest request, CancellationToken ct = default)
+    {
+        if (request.ItemSalePrice is < 0)
+            throw new ValidationFailedException(new[] { "Item sale price cannot be negative." });
+
+        await using var db = _dbContextFactory.CreateForCurrentTenant();
+
+        var sale = await db.Sales.FirstOrDefaultAsync(s => s.Id == id, ct)
+            ?? throw new NotFoundException("SALE_NOT_FOUND", "Sale was not found.");
+
+        var username = _currentUser.DisplayName;
+        var changes = new List<AuditEntry>();
+        void TrackChange(string field, string? oldValue, string? newValue)
+        {
+            if (oldValue != newValue) changes.Add(new AuditEntry("Sale", sale.Id, "Updated", username, "manual", field, oldValue, newValue));
+        }
+
+        if (request.SaleDate is not null)
+        {
+            TrackChange("SaleDate", sale.SaleDate.ToString("O"), request.SaleDate.Value.ToString("O"));
+            sale.SaleDate = request.SaleDate.Value;
+        }
+        if (request.Marketplace is not null)
+        {
+            if (string.IsNullOrWhiteSpace(request.Marketplace))
+                throw new ValidationFailedException(new[] { "Marketplace is required." });
+            TrackChange("Marketplace", sale.Marketplace, request.Marketplace.Trim());
+            sale.Marketplace = request.Marketplace.Trim();
+        }
+        if (request.ItemSalePrice is not null)
+        {
+            TrackChange("ItemSalePrice", sale.ItemSalePrice.ToString(), request.ItemSalePrice.Value.ToString());
+            sale.ItemSalePrice = request.ItemSalePrice.Value;
+
+            // GrossTransactionAmount is stored, not computed on read (see
+            // Sale.CreateNew) — recompute with the same formula so it never
+            // silently drifts from a changed ItemSalePrice.
+            var newGross = sale.ItemSalePrice + sale.BuyerPaidShipping + sale.BuyerPaidSalesTax + sale.Handling - sale.SellerDiscount;
+            TrackChange("GrossTransactionAmount", sale.GrossTransactionAmount.ToString(), newGross.ToString());
+            sale.GrossTransactionAmount = newGross;
+        }
+        sale.UpdatedBy = username;
+        sale.Touch();
+
+        await db.SaveChangesAsync(ct);
+        if (changes.Count > 0) await _auditLogger.LogManyAsync(changes, ct);
+
+        return await GetSaleAsync(sale.Id, ct);
     }
 
     public async Task<SaleFeeDto> AddFeeAsync(Guid saleId, CreateSaleFeeRequest request, CancellationToken ct = default)

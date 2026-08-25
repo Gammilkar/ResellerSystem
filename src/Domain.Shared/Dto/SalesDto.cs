@@ -31,6 +31,12 @@ public sealed class CreateListingRequest
     public DateOnly? EndDate { get; init; }
 }
 
+public sealed class UpdateListingRequest
+{
+    public string? Marketplace { get; init; }
+    public DateOnly? PublishedDate { get; init; }
+}
+
 public sealed class SaleFeeDto
 {
     public required Guid Id { get; init; }
@@ -89,6 +95,13 @@ public sealed class CreateSaleRequest
     public string? PaymentMethod { get; init; }
     public string? DestinationState { get; init; }
     public string? DestinationZip { get; init; }
+}
+
+public sealed class UpdateSaleRequest
+{
+    public DateOnly? SaleDate { get; init; }
+    public string? Marketplace { get; init; }
+    public decimal? ItemSalePrice { get; init; }
 }
 
 /// <summary>Net Proceeds / Net Profit / ROI — Architecture Plan v0.1

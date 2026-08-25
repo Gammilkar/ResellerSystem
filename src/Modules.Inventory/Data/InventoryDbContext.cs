@@ -16,6 +16,7 @@ public sealed class InventoryDbContext : DbContext
 
     public DbSet<Purchase> Purchases => Set<Purchase>();
     public DbSet<Item> Items => Set<Item>();
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -26,6 +27,7 @@ public sealed class InventoryDbContext : DbContext
             entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedNever();
             entity.Property(e => e.PurchaseDate).HasColumnName("purchase_date");
             entity.Property(e => e.SourceName).HasColumnName("source_name").IsRequired();
+            entity.Property(e => e.SupplierId).HasColumnName("supplier_id");
             entity.Property(e => e.TotalAmount).HasColumnName("total_amount");
             entity.Property(e => e.SalesTaxAmount).HasColumnName("sales_tax_amount");
             entity.Property(e => e.SalesTaxRate).HasColumnName("sales_tax_rate");
@@ -65,6 +67,25 @@ public sealed class InventoryDbContext : DbContext
 
             entity.HasQueryFilter(e => e.DeletedAt == null);
             entity.HasIndex(e => e.ItemNumber).IsUnique();
+        });
+
+        modelBuilder.Entity<Supplier>(entity =>
+        {
+            entity.ToTable("suppliers");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedNever();
+            entity.Property(e => e.Name).HasColumnName("name").IsRequired();
+            entity.Property(e => e.Phone).HasColumnName("phone");
+            entity.Property(e => e.Email).HasColumnName("email");
+            entity.Property(e => e.Address).HasColumnName("address");
+            entity.Property(e => e.Notes).HasColumnName("notes");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.CreatedBy).HasColumnName("created_by");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedBy).HasColumnName("updated_by");
+            entity.Property(e => e.DeletedAt).HasColumnName("deleted_at");
+
+            entity.HasQueryFilter(e => e.DeletedAt == null);
         });
     }
 }

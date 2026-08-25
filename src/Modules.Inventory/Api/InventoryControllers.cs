@@ -37,6 +37,10 @@ public sealed class PurchasesController : ControllerBase
         var created = await _service.CreatePurchaseAsync(request, ct);
         return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
     }
+
+    [HttpPatch("{id:guid}")]
+    public async Task<ActionResult<PurchaseDto>> Update(Guid id, [FromBody] UpdatePurchaseRequest request, CancellationToken ct) =>
+        Ok(await _service.UpdatePurchaseAsync(id, request, ct));
 }
 
 [ApiController]
@@ -78,4 +82,50 @@ public sealed class ItemsController : ControllerBase
         await _service.DeleteItemAsync(id, ct);
         return NoContent();
     }
+}
+
+/// <summary>"Поставщики" — Product Specification section 76's "справочник"
+/// pattern, first applied for real here (a proper CRUD table + screen)
+/// rather than the plain-free-text shortcut used elsewhere in this module.</summary>
+[ApiController]
+[Authorize]
+[Route("api/v1/inventory/suppliers")]
+public sealed class SuppliersController : ControllerBase
+{
+    private readonly ISupplierService _service;
+
+    public SuppliersController(ISupplierService service)
+    {
+        _service = service;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<SupplierDto>>> List(CancellationToken ct) =>
+        Ok(await _service.ListAsync(ct));
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<SupplierDto>> Get(Guid id, CancellationToken ct) =>
+        Ok(await _service.GetAsync(id, ct));
+
+    [HttpPost]
+    public async Task<ActionResult<SupplierDto>> Create([FromBody] CreateSupplierRequest request, CancellationToken ct)
+    {
+        var created = await _service.CreateAsync(request, ct);
+        return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
+    }
+
+    [HttpPatch("{id:guid}")]
+    public async Task<ActionResult<SupplierDto>> Update(Guid id, [FromBody] UpdateSupplierRequest request, CancellationToken ct) =>
+        Ok(await _service.UpdateAsync(id, request, ct));
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+    {
+        await _service.DeleteAsync(id, ct);
+        return NoContent();
+    }
+
+    [HttpGet("{id:guid}/purchases")]
+    public async Task<ActionResult<IReadOnlyList<SupplierPurchaseHistoryRowDto>>> GetPurchaseHistory(Guid id, CancellationToken ct) =>
+        Ok(await _service.GetPurchaseHistoryAsync(id, ct));
 }

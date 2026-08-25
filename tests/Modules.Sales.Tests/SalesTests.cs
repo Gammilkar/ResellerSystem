@@ -109,6 +109,17 @@ public class SalesServiceValidationTests
         _dbContextFactory.DidNotReceive().CreateForCurrentTenant();
     }
 
+    [Fact]
+    public async Task UpdateSaleAsync_rejects_negative_item_sale_price_without_touching_database()
+    {
+        var sut = CreateSut();
+
+        var act = async () => await sut.UpdateSaleAsync(Guid.NewGuid(), new UpdateSaleRequest { ItemSalePrice = -1 });
+
+        await act.Should().ThrowAsync<ValidationFailedException>();
+        _dbContextFactory.DidNotReceive().CreateForCurrentTenant();
+    }
+
     private static CreateSaleRequest MakeSaleRequest(
         string marketplace = "eBay", decimal itemSalePrice = 50m, int quantity = 1) => new()
     {

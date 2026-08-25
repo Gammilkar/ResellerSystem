@@ -84,3 +84,27 @@ public class InventoryServiceValidationTests
         Quantity = quantity
     };
 }
+
+public class SupplierServiceValidationTests
+{
+    private readonly IInventoryDbContextFactory _dbContextFactory = Substitute.For<IInventoryDbContextFactory>();
+    private readonly IAuditLogger _auditLogger = Substitute.For<IAuditLogger>();
+    private readonly ICurrentUserContext _currentUser = Substitute.For<ICurrentUserContext>();
+    private readonly SupplierService _sut;
+
+    public SupplierServiceValidationTests()
+    {
+        _sut = new SupplierService(_dbContextFactory, _auditLogger, _currentUser);
+    }
+
+    [Fact]
+    public async Task CreateAsync_rejects_blank_name_without_touching_database()
+    {
+        var request = new CreateSupplierRequest { Name = "   " };
+
+        var act = async () => await _sut.CreateAsync(request);
+
+        await act.Should().ThrowAsync<ValidationFailedException>();
+        _dbContextFactory.DidNotReceive().CreateForCurrentTenant();
+    }
+}

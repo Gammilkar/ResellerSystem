@@ -5,6 +5,7 @@ public sealed class Purchase
     public Guid Id { get; private set; }
     public DateOnly PurchaseDate { get; set; }
     public string SourceName { get; set; } = string.Empty;
+    public Guid? SupplierId { get; set; }
     public decimal TotalAmount { get; set; }
     public decimal SalesTaxAmount { get; set; }
     public decimal? SalesTaxRate { get; set; }

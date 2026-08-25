@@ -14,6 +14,7 @@ public interface IInventoryService
     Task<PurchaseDto> CreatePurchaseHeaderAsync(CreatePurchaseHeaderRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<PurchaseDto>> ListPurchasesAsync(CancellationToken ct = default);
     Task<PurchaseDto> GetPurchaseAsync(Guid id, CancellationToken ct = default);
+    Task<PurchaseDto> UpdatePurchaseAsync(Guid id, UpdatePurchaseRequest request, CancellationToken ct = default);
 
     Task<ItemDto> AddItemToPurchaseAsync(Guid purchaseId, AddItemToPurchaseRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<ItemDto>> ListItemsAsync(string? status, CancellationToken ct = default);
@@ -135,6 +136,54 @@ public sealed class InventoryService : IInventoryService
         return ToDto(purchase, purchase.Items.Count);
     }
 
+    public async Task<PurchaseDto> UpdatePurchaseAsync(Guid id, UpdatePurchaseRequest request, CancellationToken ct = default)
+    {
+        await using var db = _dbContextFactory.CreateForCurrentTenant();
+
+        var purchase = await db.Purchases.Include(p => p.Items).FirstOrDefaultAsync(p => p.Id == id, ct)
+            ?? throw new NotFoundException("PURCHASE_NOT_FOUND", "Purchase was not found.");
+
+        var username = _currentUser.DisplayName;
+        var changes = new List<AuditEntry>();
+        void TrackChange(string field, string? oldValue, string? newValue)
+        {
+            if (oldValue != newValue) changes.Add(new AuditEntry("Purchase", purchase.Id, "Updated", username, "manual", field, oldValue, newValue));
+        }
+
+        if (request.SupplierId is not null)
+        {
+            var supplier = await db.Suppliers.FirstOrDefaultAsync(s => s.Id == request.SupplierId, ct)
+                ?? throw new NotFoundException("SUPPLIER_NOT_FOUND", "Supplier was not found.");
+
+            TrackChange("SupplierId", purchase.SupplierId?.ToString(), supplier.Id.ToString());
+            purchase.SupplierId = supplier.Id;
+
+            // source_name is a denormalized snapshot of the supplier's name
+            // at assignment time, not a live join — see 0003_suppliers.sql.
+            TrackChange("SourceName", purchase.SourceName, supplier.Name);
+            purchase.SourceName = supplier.Name;
+        }
+        else if (request.SourceName is not null)
+        {
+            TrackChange("SourceName", purchase.SourceName, request.SourceName.Trim());
+            purchase.SourceName = request.SourceName.Trim();
+        }
+
+        if (request.PurchaseType is not null) { TrackChange("PurchaseType", purchase.PurchaseType, request.PurchaseType); purchase.PurchaseType = request.PurchaseType; }
+        if (request.PurchaseDate is not null)
+        {
+            TrackChange("PurchaseDate", purchase.PurchaseDate.ToString("O"), request.PurchaseDate.Value.ToString("O"));
+            purchase.PurchaseDate = request.PurchaseDate.Value;
+        }
+        purchase.UpdatedBy = username;
+        purchase.Touch();
+
+        await db.SaveChangesAsync(ct);
+        if (changes.Count > 0) await _auditLogger.LogManyAsync(changes, ct);
+
+        return ToDto(purchase, purchase.Items.Count);
+    }
+
     public async Task<IReadOnlyList<ItemDto>> ListItemsAsync(string? status, CancellationToken ct = default)
     {
         await using var db = _dbContextFactory.CreateForCurrentTenant();
@@ -209,6 +258,7 @@ public sealed class InventoryService : IInventoryService
         Id = p.Id,
         PurchaseDate = p.PurchaseDate,
         SourceName = p.SourceName,
+        SupplierId = p.SupplierId,
         TotalAmount = p.TotalAmount,
         SalesTaxAmount = p.SalesTaxAmount,
         SalesTaxRate = p.SalesTaxRate,

@@ -5,6 +5,7 @@ public sealed class PurchaseDto
     public required Guid Id { get; init; }
     public required DateOnly PurchaseDate { get; init; }
     public required string SourceName { get; init; }
+    public Guid? SupplierId { get; init; }
     public required decimal TotalAmount { get; init; }
     public required decimal SalesTaxAmount { get; init; }
     public decimal? SalesTaxRate { get; init; }
@@ -86,4 +87,12 @@ public sealed class UpdateItemRequest
     public string? Status { get; init; }
     public decimal? CostBasisOverride { get; init; }
     public string? Notes { get; init; }
+}
+
+public sealed class UpdatePurchaseRequest
+{
+    public string? SourceName { get; init; }
+    public Guid? SupplierId { get; init; }
+    public string? PurchaseType { get; init; }
+    public DateOnly? PurchaseDate { get; init; }
 }

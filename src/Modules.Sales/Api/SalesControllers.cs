@@ -20,6 +20,10 @@ public sealed class ListingsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ListingDto>> Create([FromBody] CreateListingRequest request, CancellationToken ct) =>
         Ok(await _service.CreateListingAsync(request, ct));
+
+    [HttpPatch("{id:guid}")]
+    public async Task<ActionResult<ListingDto>> Update(Guid id, [FromBody] UpdateListingRequest request, CancellationToken ct) =>
+        Ok(await _service.UpdateListingAsync(id, request, ct));
 }
 
 [ApiController]
@@ -44,6 +48,10 @@ public sealed class SalesController : ControllerBase
         var created = await _service.CreateSaleAsync(request, ct);
         return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
     }
+
+    [HttpPatch("{id:guid}")]
+    public async Task<ActionResult<SaleDto>> Update(Guid id, [FromBody] UpdateSaleRequest request, CancellationToken ct) =>
+        Ok(await _service.UpdateSaleAsync(id, request, ct));
 
     [HttpPost("{id:guid}/fees")]
     public async Task<ActionResult<SaleFeeDto>> AddFee(Guid id, [FromBody] CreateSaleFeeRequest request, CancellationToken ct) =>
