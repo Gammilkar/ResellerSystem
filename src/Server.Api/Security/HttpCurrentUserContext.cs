@@ -34,7 +34,9 @@ public sealed class HttpCurrentUserContext : ICurrentUserContext
         }
     }
 
-    public string DisplayName => Principal?.Identity?.IsAuthenticated == true ? UserId : "Local User";
+    public string DisplayName => Principal?.Identity?.IsAuthenticated == true
+        ? (Principal.Identity!.Name ?? UserId)
+        : "Local User";
 
     // No roles yet (Architecture Plan v0.1 — intentionally not building
     // multi-user permissions now); every authenticated user can access

@@ -11,6 +11,9 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
+    <!-- MIT-licensed, free — reads the .xlsx files Product Specification
+         section 57 asks for. No paid tier, unlike EPPlus >= 5. -->
+    <PackageReference Include="ClosedXML" Version="0.104.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Server.Modules.Abstractions\Server.Modules.Abstractions.csproj" />
@@ -18,13 +21,17 @@
     <ProjectReference Include="..\Server.Data\Server.Data.csproj" />
     <ProjectReference Include="..\Domain.Shared\Domain.Shared.csproj" />
     <!-- Deliberate exception to "modules don't reference each other":
-         Import's entire purpose is writing into another module's data
+         Import's entire purpose is writing into other modules' data
          (unlike Reports' read-only aggregation or Sales' read-only cost
          basis lookup, both of which use raw cross-module SQL reads
-         instead). Depending directly on Modules.Inventory's service here
-         is the correct design for that, not a workaround — see
-         ImportModule.cs and KNOWN_LIMITATIONS.md "Import module scope". -->
+         instead). Depending directly on these modules' services is the
+         correct design for that, not a workaround — see ImportModule.cs
+         and KNOWN_LIMITATIONS.md "Import module scope". A full xlsx-full
+         row can touch Inventory (Purchase/Item), Sales (Listing/Sale/
+         Return/Fees), and Expenses (selling costs) all at once. -->
     <ProjectReference Include="..\Modules.Inventory\Modules.Inventory.csproj" />
+    <ProjectReference Include="..\Modules.Sales\Modules.Sales.csproj" />
+    <ProjectReference Include="..\Modules.Expenses\Modules.Expenses.csproj" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Migrations\Scripts\**\*.sql" />

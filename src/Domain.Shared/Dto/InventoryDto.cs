@@ -10,6 +10,7 @@ public sealed class PurchaseDto
     public decimal? SalesTaxRate { get; init; }
     public string? PaymentMethod { get; init; }
     public required bool UsedResellerPermit { get; init; }
+    public required string PurchaseType { get; init; }
     public string? Comment { get; init; }
     public required int ItemCount { get; init; }
     public required DateTimeOffset CreatedAt { get; init; }
@@ -23,7 +24,10 @@ public sealed class CreatePurchaseRequest
     public decimal SalesTaxAmount { get; init; } = 0;
     public decimal? SalesTaxRate { get; init; }
     public string? PaymentMethod { get; init; }
-    public bool UsedResellerPermit { get; init; } = false;
+
+    /// <summary>"TaxPaid" | "ResellerPermit" | "NoTax" — Product
+    /// Specification section 26. UsedResellerPermit is derived from this.</summary>
+    public string PurchaseType { get; init; } = "TaxPaid";
     public string? Comment { get; init; }
 
     /// <summary>How many identical Item rows to create immediately —
@@ -47,6 +51,32 @@ public sealed class ItemDto
     public required decimal EffectiveCostBasis { get; init; }
     public string? Notes { get; init; }
     public required DateTimeOffset CreatedAt { get; init; }
+}
+
+/// <summary>Creates a Purchase with no items yet — used by Import to
+/// group several spreadsheet rows (sharing the same source Purchase ID
+/// column) under one Purchase, adding items one at a time via
+/// AddItemToPurchaseRequest as each row is processed. The manual "New
+/// Purchase" screen still uses CreatePurchaseRequest, which always seeds
+/// the first item(s) immediately.</summary>
+public sealed class CreatePurchaseHeaderRequest
+{
+    public required DateOnly PurchaseDate { get; init; }
+    public required string SourceName { get; init; }
+    public required decimal TotalAmount { get; init; }
+    public decimal SalesTaxAmount { get; init; } = 0;
+    public decimal? SalesTaxRate { get; init; }
+    public string? PaymentMethod { get; init; }
+    public string PurchaseType { get; init; } = "TaxPaid";
+    public string? Comment { get; init; }
+}
+
+public sealed class AddItemToPurchaseRequest
+{
+    public required string Name { get; init; }
+    public string? CategoryName { get; init; }
+    public required decimal CostBasis { get; init; }
+    public string? Notes { get; init; }
 }
 
 public sealed class UpdateItemRequest

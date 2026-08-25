@@ -26,6 +26,7 @@ public sealed class App : Application
 
         services.AddSingleton<ClientSessionState>();
         services.AddSingleton<ITrustedDeviceStore, TrustedDeviceStore>();
+        services.AddSingleton<IFilePickerService, FilePickerService>();
 
         // A single shared IServerApiClient instance for the app's lifetime:
         // AddHttpClient<TClient>() registers TClient as transient, which
@@ -44,6 +45,7 @@ public sealed class App : Application
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<InventoryViewModel>();
         services.AddTransient<ChangePasswordViewModel>();
+        services.AddTransient<ImportViewModel>();
 
         services.AddSingleton<INavigationService, NavigationService>();
 

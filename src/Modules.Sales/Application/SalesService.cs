@@ -2,9 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using ResellerSystem.Domain.Shared.Dto;
 using ResellerSystem.Modules.Sales.Data;
 using ResellerSystem.Modules.Sales.Domain;
+using ResellerSystem.Server.Application.Audit;
 using ResellerSystem.Server.Application.Databases;
 using ResellerSystem.Server.Application.Exceptions;
 using ResellerSystem.Server.Data.Configuration;
+using ResellerSystem.Server.Domain.Abstractions;
 
 namespace ResellerSystem.Modules.Sales.Application;
 
@@ -20,6 +22,7 @@ public interface ISalesService
     Task<SaleFinancialsDto> GetFinancialsAsync(Guid saleId, CancellationToken ct = default);
 
     Task<ReturnDto> CreateReturnAsync(CreateReturnRequest request, CancellationToken ct = default);
+    Task<IReadOnlyList<ReturnDto>> ListReturnsAsync(CancellationToken ct = default);
 }
 
 public sealed class SalesService : ISalesService
@@ -28,17 +31,23 @@ public sealed class SalesService : ISalesService
     private readonly IItemCostBasisReader _costBasisReader;
     private readonly ConnectionStringFactory _connectionStringFactory;
     private readonly ICurrentTenantAccessor _tenantAccessor;
+    private readonly IAuditLogger _auditLogger;
+    private readonly ICurrentUserContext _currentUser;
 
     public SalesService(
         ISalesDbContextFactory dbContextFactory,
         IItemCostBasisReader costBasisReader,
         ConnectionStringFactory connectionStringFactory,
-        ICurrentTenantAccessor tenantAccessor)
+        ICurrentTenantAccessor tenantAccessor,
+        IAuditLogger auditLogger,
+        ICurrentUserContext currentUser)
     {
         _dbContextFactory = dbContextFactory;
         _costBasisReader = costBasisReader;
         _connectionStringFactory = connectionStringFactory;
         _tenantAccessor = tenantAccessor;
+        _auditLogger = auditLogger;
+        _currentUser = currentUser;
     }
 
     public async Task<ListingDto> CreateListingAsync(CreateListingRequest request, CancellationToken ct = default)
@@ -48,9 +57,18 @@ public sealed class SalesService : ISalesService
 
         await using var db = _dbContextFactory.CreateForCurrentTenant();
         var listing = Listing.CreateNew(request.ItemId, request.Marketplace, request.MarketplaceAccount, request.ListingPrice);
+        listing.ExternalListingId = request.ExternalListingId;
+        if (request.PublishedDate is not null) listing.PublishedDate = request.PublishedDate;
+        listing.Promoted = request.Promoted;
+        listing.PromotedRate = request.PromotedRate;
+        listing.Url = request.Url;
+        listing.EndDate = request.EndDate;
+        listing.CreatedBy = _currentUser.DisplayName;
+        listing.UpdatedBy = _currentUser.DisplayName;
         db.Listings.Add(listing);
         await db.SaveChangesAsync(ct);
 
+        await _auditLogger.LogAsync(new AuditEntry("Listing", listing.Id, "Created", _currentUser.DisplayName, "manual"), ct);
         return ToDto(listing);
     }
 
@@ -77,10 +95,15 @@ public sealed class SalesService : ISalesService
             request.ItemSalePrice, request.BuyerPaidShipping, request.BuyerPaidSalesTax,
             request.Handling, request.SellerDiscount, request.MarketplaceCollectedTax,
             request.PayoutAmount, request.Quantity, request.PaymentMethod);
+        sale.DestinationState = request.DestinationState;
+        sale.DestinationZip = request.DestinationZip;
+        sale.CreatedBy = _currentUser.DisplayName;
+        sale.UpdatedBy = _currentUser.DisplayName;
 
         db.Sales.Add(sale);
         await db.SaveChangesAsync(ct);
 
+        await _auditLogger.LogAsync(new AuditEntry("Sale", sale.Id, "Created", _currentUser.DisplayName, "manual"), ct);
         return await GetSaleAsync(sale.Id, ct);
     }
 
@@ -113,6 +136,7 @@ public sealed class SalesService : ISalesService
         db.SaleFees.Add(fee);
         await db.SaveChangesAsync(ct);
 
+        await _auditLogger.LogAsync(new AuditEntry("SaleFee", fee.Id, "Created", _currentUser.DisplayName, "manual"), ct);
         return new SaleFeeDto { Id = fee.Id, FeeType = fee.FeeType, Amount = fee.Amount, Rate = fee.Rate };
     }
 
@@ -163,18 +187,20 @@ public sealed class SalesService : ISalesService
             request.RefundToBuyer, request.RefundedShipping, request.MarketplaceFeeCredit,
             request.ReturnShippingCost, request.OtherExpense, request.PhysicallyReturned,
             request.ConditionOnReturn, request.Comment);
+        ret.CreatedBy = _currentUser.DisplayName;
+        ret.UpdatedBy = _currentUser.DisplayName;
 
         db.Returns.Add(ret);
         await db.SaveChangesAsync(ct);
 
-        return new ReturnDto
-        {
-            Id = ret.Id,
-            SaleId = ret.SaleId,
-            ReturnDate = ret.ReturnDate,
-            RefundToBuyer = ret.RefundToBuyer,
-            PhysicallyReturned = ret.PhysicallyReturned
-        };
+        await _auditLogger.LogAsync(new AuditEntry("Return", ret.Id, "Created", _currentUser.DisplayName, "manual"), ct);
+        return ToDto(ret);
+    }
+
+    public async Task<IReadOnlyList<ReturnDto>> ListReturnsAsync(CancellationToken ct = default)
+    {
+        await using var db = _dbContextFactory.CreateForCurrentTenant();
+        return await db.Returns.OrderByDescending(r => r.CreatedAt).Select(r => ToDto(r)).ToListAsync(ct);
     }
 
     private static ListingDto ToDto(Listing l) => new()
@@ -183,8 +209,14 @@ public sealed class SalesService : ISalesService
         ItemId = l.ItemId,
         Marketplace = l.Marketplace,
         MarketplaceAccount = l.MarketplaceAccount,
+        ExternalListingId = l.ExternalListingId,
+        PublishedDate = l.PublishedDate,
         ListingPrice = l.ListingPrice,
+        Promoted = l.Promoted,
+        PromotedRate = l.PromotedRate,
         Status = l.Status,
+        Url = l.Url,
+        EndDate = l.EndDate,
         CreatedAt = l.CreatedAt
     };
 
@@ -195,6 +227,7 @@ public sealed class SalesService : ISalesService
         ListingId = s.ListingId,
         Marketplace = s.Marketplace,
         OrderId = s.OrderId,
+        TransactionId = s.TransactionId,
         SaleDate = s.SaleDate,
         ItemSalePrice = s.ItemSalePrice,
         BuyerPaidShipping = s.BuyerPaidShipping,
@@ -205,6 +238,25 @@ public sealed class SalesService : ISalesService
         MarketplaceCollectedTax = s.MarketplaceCollectedTax,
         PayoutAmount = s.PayoutAmount,
         Quantity = s.Quantity,
+        DestinationState = s.DestinationState,
+        DestinationZip = s.DestinationZip,
         Fees = s.Fees.Select(f => new SaleFeeDto { Id = f.Id, FeeType = f.FeeType, Amount = f.Amount, Rate = f.Rate }).ToList()
+    };
+
+    private static ReturnDto ToDto(Return r) => new()
+    {
+        Id = r.Id,
+        SaleId = r.SaleId,
+        ItemId = r.ItemId,
+        ReturnDate = r.ReturnDate,
+        ReturnType = r.ReturnType,
+        RefundToBuyer = r.RefundToBuyer,
+        RefundedShipping = r.RefundedShipping,
+        MarketplaceFeeCredit = r.MarketplaceFeeCredit,
+        ReturnShippingCost = r.ReturnShippingCost,
+        OtherExpense = r.OtherExpense,
+        PhysicallyReturned = r.PhysicallyReturned,
+        ConditionOnReturn = r.ConditionOnReturn,
+        Comment = r.Comment
     };
 }

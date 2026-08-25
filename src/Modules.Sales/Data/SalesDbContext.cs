@@ -31,7 +31,9 @@ public sealed class SalesDbContext : DbContext
             entity.Property(e => e.Url).HasColumnName("url");
             entity.Property(e => e.EndDate).HasColumnName("end_date");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.CreatedBy).HasColumnName("created_by");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedBy).HasColumnName("updated_by");
             entity.Property(e => e.DeletedAt).HasColumnName("deleted_at");
             entity.HasQueryFilter(e => e.DeletedAt == null);
         });
@@ -58,8 +60,12 @@ public sealed class SalesDbContext : DbContext
             entity.Property(e => e.PayoutAmount).HasColumnName("payout_amount");
             entity.Property(e => e.Quantity).HasColumnName("quantity");
             entity.Property(e => e.PaymentMethod).HasColumnName("payment_method");
+            entity.Property(e => e.DestinationState).HasColumnName("destination_state");
+            entity.Property(e => e.DestinationZip).HasColumnName("destination_zip");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.CreatedBy).HasColumnName("created_by");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedBy).HasColumnName("updated_by");
             entity.Property(e => e.DeletedAt).HasColumnName("deleted_at");
             entity.HasQueryFilter(e => e.DeletedAt == null);
             entity.HasMany(e => e.Fees).WithOne().HasForeignKey(f => f.SaleId);
@@ -96,7 +102,9 @@ public sealed class SalesDbContext : DbContext
             entity.Property(e => e.ConditionOnReturn).HasColumnName("condition_on_return");
             entity.Property(e => e.Comment).HasColumnName("comment");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.CreatedBy).HasColumnName("created_by");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedBy).HasColumnName("updated_by");
         });
     }
 }

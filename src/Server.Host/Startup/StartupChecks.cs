@@ -3,11 +3,13 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using ResellerSystem.Server.Application.Databases;
 using ResellerSystem.Server.Application.Modules;
 using ResellerSystem.Server.Application.Security;
 using ResellerSystem.Server.Application.VersionInfo;
 using ResellerSystem.Server.Data.Configuration;
 using ResellerSystem.Server.Data.Master;
+using ResellerSystem.Server.Domain.Enums;
 using ResellerSystem.Server.FileStorage;
 using ResellerSystem.Server.Modules.Abstractions;
 
@@ -20,7 +22,14 @@ namespace ResellerSystem.Server.Host.Startup;
 ///   3. master database existence + migrations
 ///   4. storage folders exist and are read/write-able
 ///   5. module registry — record "core" + every catalog module's version
-///   6. initial admin account — auto-provisioned on first run only, so the
+///   6. pending tenant database migrations — Product Specification section
+///      18 ("Database schema должна изменяться автоматически при
+///      обновлении"): a module adding a migration after a tenant database
+///      already exists must still reach it, not just brand-new databases
+///      (see ITenantDatabaseProvisioner.ApplyTenantMigrationsAsync, which
+///      DatabaseProvisioningService.CreateAsync alone does NOT cover for
+///      already-Ready databases)
+///   7. initial admin account — auto-provisioned on first run only, so the
 ///      installer never requires a manual "create account" step
 /// Any failure logs clearly and stops the host before it starts accepting
 /// API traffic — a half-started server is worse than one that refuses to start.
@@ -77,7 +86,36 @@ public static class StartupChecks
                 module.ModuleKey, module.DisplayName, module.Version);
         }
 
-        logger.LogInformation("Startup check 6/6: ensuring an admin account exists...");
+        logger.LogInformation("Startup check 6/7: applying pending tenant database migrations...");
+        var profileRepository = sp.GetRequiredService<IDatabaseProfileRepository>();
+        var tenantProvisioner = sp.GetRequiredService<ITenantDatabaseProvisioner>();
+        var profiles = await profileRepository.GetAllAsync(ct);
+        foreach (var profile in profiles.Where(p => p.Status == DatabaseStatus.Ready))
+        {
+            try
+            {
+                var schemaVersion = await tenantProvisioner.ApplyTenantMigrationsAsync(profile.PhysicalDatabaseName, ct);
+                if (schemaVersion != profile.SchemaVersion)
+                {
+                    profile.MarkReady(schemaVersion);
+                    await profileRepository.UpdateAsync(profile, ct);
+                    logger.LogInformation("Database {DatabaseId} migrated to schema version {Version}.", profile.Id, schemaVersion);
+                }
+            }
+            catch (Exception ex)
+            {
+                // One tenant database's migration failure must not block the
+                // whole server from starting — mark it and move on; Server
+                // Manager / the database list surfaces MigrationFailed.
+                logger.LogError(ex, "Migration failed for database {DatabaseId} ({PhysicalName}); marking MigrationFailed.",
+                    profile.Id, profile.PhysicalDatabaseName);
+                profile.MarkMigrationFailed();
+                await profileRepository.UpdateAsync(profile, ct);
+            }
+        }
+        logger.LogInformation("Tenant database migrations OK ({Count} database(s) checked).", profiles.Count);
+
+        logger.LogInformation("Startup check 7/7: ensuring an admin account exists...");
         await EnsureInitialAdminAsync(sp, fileStorage, logger, ct);
 
         logger.LogInformation("All startup checks passed.");

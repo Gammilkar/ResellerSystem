@@ -16,7 +16,9 @@ public sealed class Listing
     public DateOnly? EndDate { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
+    public string CreatedBy { get; set; } = "system";
     public DateTimeOffset UpdatedAt { get; set; }
+    public string UpdatedBy { get; set; } = "system";
     public DateTimeOffset? DeletedAt { get; set; }
 
     private Listing() { }

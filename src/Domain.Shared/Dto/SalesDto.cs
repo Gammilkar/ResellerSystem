@@ -6,8 +6,14 @@ public sealed class ListingDto
     public required Guid ItemId { get; init; }
     public required string Marketplace { get; init; }
     public string? MarketplaceAccount { get; init; }
+    public string? ExternalListingId { get; init; }
+    public DateOnly? PublishedDate { get; init; }
     public decimal? ListingPrice { get; init; }
+    public required bool Promoted { get; init; }
+    public decimal? PromotedRate { get; init; }
     public required string Status { get; init; }
+    public string? Url { get; init; }
+    public DateOnly? EndDate { get; init; }
     public required DateTimeOffset CreatedAt { get; init; }
 }
 
@@ -16,7 +22,13 @@ public sealed class CreateListingRequest
     public required Guid ItemId { get; init; }
     public required string Marketplace { get; init; }
     public string? MarketplaceAccount { get; init; }
+    public string? ExternalListingId { get; init; }
+    public DateOnly? PublishedDate { get; init; }
     public decimal? ListingPrice { get; init; }
+    public bool Promoted { get; init; }
+    public decimal? PromotedRate { get; init; }
+    public string? Url { get; init; }
+    public DateOnly? EndDate { get; init; }
 }
 
 public sealed class SaleFeeDto
@@ -41,6 +53,7 @@ public sealed class SaleDto
     public Guid? ListingId { get; init; }
     public required string Marketplace { get; init; }
     public string? OrderId { get; init; }
+    public string? TransactionId { get; init; }
     public required DateOnly SaleDate { get; init; }
     public required decimal ItemSalePrice { get; init; }
     public required decimal BuyerPaidShipping { get; init; }
@@ -51,6 +64,8 @@ public sealed class SaleDto
     public required decimal MarketplaceCollectedTax { get; init; }
     public required decimal PayoutAmount { get; init; }
     public required int Quantity { get; init; }
+    public string? DestinationState { get; init; }
+    public string? DestinationZip { get; init; }
     public required IReadOnlyList<SaleFeeDto> Fees { get; init; }
 }
 
@@ -72,6 +87,8 @@ public sealed class CreateSaleRequest
     public required decimal PayoutAmount { get; init; }
     public int Quantity { get; init; } = 1;
     public string? PaymentMethod { get; init; }
+    public string? DestinationState { get; init; }
+    public string? DestinationZip { get; init; }
 }
 
 /// <summary>Net Proceeds / Net Profit / ROI — Architecture Plan v0.1
@@ -108,7 +125,15 @@ public sealed class ReturnDto
 {
     public required Guid Id { get; init; }
     public required Guid SaleId { get; init; }
+    public required Guid ItemId { get; init; }
     public required DateOnly ReturnDate { get; init; }
+    public required string ReturnType { get; init; }
     public required decimal RefundToBuyer { get; init; }
+    public required decimal RefundedShipping { get; init; }
+    public required decimal MarketplaceFeeCredit { get; init; }
+    public required decimal ReturnShippingCost { get; init; }
+    public required decimal OtherExpense { get; init; }
     public required bool PhysicallyReturned { get; init; }
+    public string? ConditionOnReturn { get; init; }
+    public string? Comment { get; init; }
 }

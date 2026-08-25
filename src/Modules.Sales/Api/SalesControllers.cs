@@ -62,6 +62,10 @@ public sealed class ReturnsController : ControllerBase
     private readonly ISalesService _service;
     public ReturnsController(ISalesService service) => _service = service;
 
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<ReturnDto>>> List(CancellationToken ct) =>
+        Ok(await _service.ListReturnsAsync(ct));
+
     [HttpPost]
     public async Task<ActionResult<ReturnDto>> Create([FromBody] CreateReturnRequest request, CancellationToken ct) =>
         Ok(await _service.CreateReturnAsync(request, ct));

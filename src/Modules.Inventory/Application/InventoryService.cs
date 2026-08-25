@@ -2,16 +2,20 @@ using Microsoft.EntityFrameworkCore;
 using ResellerSystem.Domain.Shared.Dto;
 using ResellerSystem.Modules.Inventory.Data;
 using ResellerSystem.Modules.Inventory.Domain;
+using ResellerSystem.Server.Application.Audit;
 using ResellerSystem.Server.Application.Exceptions;
+using ResellerSystem.Server.Domain.Abstractions;
 
 namespace ResellerSystem.Modules.Inventory.Application;
 
 public interface IInventoryService
 {
     Task<PurchaseDto> CreatePurchaseAsync(CreatePurchaseRequest request, CancellationToken ct = default);
+    Task<PurchaseDto> CreatePurchaseHeaderAsync(CreatePurchaseHeaderRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<PurchaseDto>> ListPurchasesAsync(CancellationToken ct = default);
     Task<PurchaseDto> GetPurchaseAsync(Guid id, CancellationToken ct = default);
 
+    Task<ItemDto> AddItemToPurchaseAsync(Guid purchaseId, AddItemToPurchaseRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<ItemDto>> ListItemsAsync(string? status, CancellationToken ct = default);
     Task<ItemDto> GetItemAsync(Guid id, CancellationToken ct = default);
     Task<ItemDto> UpdateItemAsync(Guid id, UpdateItemRequest request, CancellationToken ct = default);
@@ -21,10 +25,14 @@ public interface IInventoryService
 public sealed class InventoryService : IInventoryService
 {
     private readonly IInventoryDbContextFactory _dbContextFactory;
+    private readonly IAuditLogger _auditLogger;
+    private readonly ICurrentUserContext _currentUser;
 
-    public InventoryService(IInventoryDbContextFactory dbContextFactory)
+    public InventoryService(IInventoryDbContextFactory dbContextFactory, IAuditLogger auditLogger, ICurrentUserContext currentUser)
     {
         _dbContextFactory = dbContextFactory;
+        _auditLogger = auditLogger;
+        _currentUser = currentUser;
     }
 
     public async Task<PurchaseDto> CreatePurchaseAsync(CreatePurchaseRequest request, CancellationToken ct = default)
@@ -43,22 +51,68 @@ public sealed class InventoryService : IInventoryService
         var purchase = Purchase.CreateNew(
             request.PurchaseDate, request.SourceName, request.TotalAmount,
             request.SalesTaxAmount, request.SalesTaxRate, request.PaymentMethod,
-            request.UsedResellerPermit, request.Comment);
+            request.PurchaseType, request.Comment);
 
         db.Purchases.Add(purchase);
 
         // Even split of cost across all requested units — Architecture Plan
         // v0.1 section 10: each physical unit is its own Item row.
         var costPerItem = Math.Round(request.TotalAmount / request.Quantity, 2, MidpointRounding.AwayFromZero);
+        var items = new List<Item>();
         for (var i = 0; i < request.Quantity; i++)
         {
             var item = Item.CreateNew(purchase.Id, request.ItemName, request.CategoryName, costPerItem, null);
             db.Items.Add(item);
+            items.Add(item);
         }
 
         await db.SaveChangesAsync(ct);
 
+        var username = _currentUser.DisplayName;
+        var auditEntries = new List<AuditEntry> { new("Purchase", purchase.Id, "Created", username, "manual") };
+        auditEntries.AddRange(items.Select(i => new AuditEntry("Item", i.Id, "Created", username, "manual")));
+        await _auditLogger.LogManyAsync(auditEntries, ct);
+
         return await GetPurchaseAsync(purchase.Id, ct);
+    }
+
+    public async Task<PurchaseDto> CreatePurchaseHeaderAsync(CreatePurchaseHeaderRequest request, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.SourceName))
+            throw new ValidationFailedException(new[] { "Source name is required." });
+        if (request.TotalAmount < 0)
+            throw new ValidationFailedException(new[] { "Total amount cannot be negative." });
+
+        await using var db = _dbContextFactory.CreateForCurrentTenant();
+
+        var purchase = Purchase.CreateNew(
+            request.PurchaseDate, request.SourceName, request.TotalAmount,
+            request.SalesTaxAmount, request.SalesTaxRate, request.PaymentMethod,
+            request.PurchaseType, request.Comment);
+
+        db.Purchases.Add(purchase);
+        await db.SaveChangesAsync(ct);
+
+        await _auditLogger.LogAsync(new AuditEntry("Purchase", purchase.Id, "Created", _currentUser.DisplayName, "manual"), ct);
+        return ToDto(purchase, 0);
+    }
+
+    public async Task<ItemDto> AddItemToPurchaseAsync(Guid purchaseId, AddItemToPurchaseRequest request, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name))
+            throw new ValidationFailedException(new[] { "Item name is required." });
+
+        await using var db = _dbContextFactory.CreateForCurrentTenant();
+
+        var purchaseExists = await db.Purchases.AnyAsync(p => p.Id == purchaseId, ct);
+        if (!purchaseExists) throw new NotFoundException("PURCHASE_NOT_FOUND", "Purchase was not found.");
+
+        var item = Item.CreateNew(purchaseId, request.Name, request.CategoryName, request.CostBasis, request.Notes);
+        db.Items.Add(item);
+        await db.SaveChangesAsync(ct);
+
+        await _auditLogger.LogAsync(new AuditEntry("Item", item.Id, "Created", _currentUser.DisplayName, "manual"), ct);
+        return ToDto(item);
     }
 
     public async Task<IReadOnlyList<PurchaseDto>> ListPurchasesAsync(CancellationToken ct = default)
@@ -114,14 +168,27 @@ public sealed class InventoryService : IInventoryService
         var item = await db.Items.FirstOrDefaultAsync(i => i.Id == id, ct)
             ?? throw new NotFoundException("ITEM_NOT_FOUND", "Item was not found.");
 
-        if (request.Name is not null) item.Name = request.Name.Trim();
-        if (request.CategoryName is not null) item.CategoryName = request.CategoryName;
-        if (request.Status is not null) item.Status = request.Status;
-        if (request.CostBasisOverride is not null) item.CostBasisOverride = request.CostBasisOverride;
-        if (request.Notes is not null) item.Notes = request.Notes;
+        var username = _currentUser.DisplayName;
+        var changes = new List<AuditEntry>();
+        void TrackChange(string field, string? oldValue, string? newValue)
+        {
+            if (oldValue != newValue) changes.Add(new AuditEntry("Item", item.Id, "Updated", username, "manual", field, oldValue, newValue));
+        }
+
+        if (request.Name is not null) { TrackChange("Name", item.Name, request.Name.Trim()); item.Name = request.Name.Trim(); }
+        if (request.CategoryName is not null) { TrackChange("CategoryName", item.CategoryName, request.CategoryName); item.CategoryName = request.CategoryName; }
+        if (request.Status is not null) { TrackChange("Status", item.Status, request.Status); item.Status = request.Status; }
+        if (request.CostBasisOverride is not null)
+        {
+            TrackChange("CostBasisOverride", item.CostBasisOverride?.ToString(), request.CostBasisOverride?.ToString());
+            item.CostBasisOverride = request.CostBasisOverride;
+        }
+        if (request.Notes is not null) { TrackChange("Notes", item.Notes, request.Notes); item.Notes = request.Notes; }
         item.Touch();
 
         await db.SaveChangesAsync(ct);
+        if (changes.Count > 0) await _auditLogger.LogManyAsync(changes, ct);
+
         return ToDto(item);
     }
 
@@ -134,6 +201,7 @@ public sealed class InventoryService : IInventoryService
 
         item.SoftDelete(); // never a hard delete — Architecture Plan v0.1 section 47
         await db.SaveChangesAsync(ct);
+        await _auditLogger.LogAsync(new AuditEntry("Item", item.Id, "Deleted", _currentUser.DisplayName, "manual"), ct);
     }
 
     private static PurchaseDto ToDto(Purchase p, int itemCount) => new()
@@ -146,6 +214,7 @@ public sealed class InventoryService : IInventoryService
         SalesTaxRate = p.SalesTaxRate,
         PaymentMethod = p.PaymentMethod,
         UsedResellerPermit = p.UsedResellerPermit,
+        PurchaseType = p.PurchaseType,
         Comment = p.Comment,
         ItemCount = itemCount,
         CreatedAt = p.CreatedAt

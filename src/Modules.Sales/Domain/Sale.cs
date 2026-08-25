@@ -29,9 +29,13 @@ public sealed class Sale
 
     public int Quantity { get; set; } = 1;
     public string? PaymentMethod { get; set; }
+    public string? DestinationState { get; set; }
+    public string? DestinationZip { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
+    public string CreatedBy { get; set; } = "system";
     public DateTimeOffset UpdatedAt { get; set; }
+    public string UpdatedBy { get; set; } = "system";
     public DateTimeOffset? DeletedAt { get; set; }
 
     public List<SaleFee> Fees { get; private set; } = new();

@@ -11,6 +11,7 @@ public sealed class ImportDbContext : DbContext
 
     public DbSet<ImportBatch> ImportBatches => Set<ImportBatch>();
     public DbSet<ImportStagingRow> ImportStagingRows => Set<ImportStagingRow>();
+    public DbSet<ImportMappingTemplate> ImportMappingTemplates => Set<ImportMappingTemplate>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -22,6 +23,7 @@ public sealed class ImportDbContext : DbContext
             entity.Property(e => e.SourceFilename).HasColumnName("source_filename").IsRequired();
             entity.Property(e => e.ImportType).HasColumnName("import_type");
             entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.ColumnMapping).HasColumnName("column_mapping").HasColumnType("jsonb");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.ConfirmedAt).HasColumnName("confirmed_at");
             entity.HasMany(e => e.Rows).WithOne().HasForeignKey(r => r.ImportBatchId);
@@ -35,14 +37,20 @@ public sealed class ImportDbContext : DbContext
             entity.Property(e => e.ImportBatchId).HasColumnName("import_batch_id");
             entity.Property(e => e.RowIndex).HasColumnName("row_index");
             entity.Property(e => e.RawData).HasColumnName("raw_data").HasColumnType("jsonb");
-            entity.Property(e => e.MappedSourceName).HasColumnName("mapped_source_name");
-            entity.Property(e => e.MappedItemName).HasColumnName("mapped_item_name");
-            entity.Property(e => e.MappedTotalAmount).HasColumnName("mapped_total_amount");
-            entity.Property(e => e.MappedQuantity).HasColumnName("mapped_quantity");
-            entity.Property(e => e.MappedPurchaseDate).HasColumnName("mapped_purchase_date");
             entity.Property(e => e.ValidationErrors).HasColumnName("validation_errors").HasColumnType("jsonb");
             entity.Property(e => e.IsValid).HasColumnName("is_valid");
             entity.Property(e => e.PossibleDuplicate).HasColumnName("possible_duplicate");
+        });
+
+        modelBuilder.Entity<ImportMappingTemplate>(entity =>
+        {
+            entity.ToTable("import_mapping_templates");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedNever();
+            entity.Property(e => e.Name).HasColumnName("name").IsRequired();
+            entity.Property(e => e.ImportType).HasColumnName("import_type").IsRequired();
+            entity.Property(e => e.Mapping).HasColumnName("mapping").HasColumnType("jsonb");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
         });
     }
 }

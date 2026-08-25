@@ -31,6 +31,7 @@ public sealed class InventoryDbContext : DbContext
             entity.Property(e => e.SalesTaxRate).HasColumnName("sales_tax_rate");
             entity.Property(e => e.PaymentMethod).HasColumnName("payment_method");
             entity.Property(e => e.UsedResellerPermit).HasColumnName("used_reseller_permit");
+            entity.Property(e => e.PurchaseType).HasColumnName("purchase_type");
             entity.Property(e => e.Comment).HasColumnName("comment");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.CreatedBy).HasColumnName("created_by");

@@ -2,6 +2,8 @@ namespace ResellerSystem.Server.Application.Security;
 
 public sealed record SessionInfo(string Token, Guid UserId, DateTimeOffset ExpiresAt);
 
+public sealed record ValidatedSession(Guid UserId, string Username);
+
 /// <summary>
 /// Server-side session tokens (opaque random strings, stored in the master
 /// DB `sessions` table — not JWTs). Deliberately simple: this is a single
@@ -13,6 +15,10 @@ public interface ISessionService
     /// (see SessionService.RememberMeLifetime); false = the normal short
     /// session.</param>
     Task<SessionInfo> CreateSessionAsync(Guid userId, bool rememberMe, CancellationToken ct = default);
-    Task<Guid?> ValidateTokenAsync(string token, CancellationToken ct = default);
+
+    /// <summary>Also returns the username (joined from `users`) so
+    /// SessionAuthenticationHandler can put it on ClaimTypes.Name without
+    /// a second DB round trip per request — see ICurrentUserAccessor.</summary>
+    Task<ValidatedSession?> ValidateTokenAsync(string token, CancellationToken ct = default);
     Task RevokeAsync(string token, CancellationToken ct = default);
 }

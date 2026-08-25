@@ -4,9 +4,11 @@ using ResellerSystem.Domain.Shared.Dto;
 using ResellerSystem.Modules.Sales.Application;
 using ResellerSystem.Modules.Sales.Data;
 using ResellerSystem.Modules.Sales.Domain;
+using ResellerSystem.Server.Application.Audit;
 using ResellerSystem.Server.Application.Databases;
 using ResellerSystem.Server.Application.Exceptions;
 using ResellerSystem.Server.Data.Configuration;
+using ResellerSystem.Server.Domain.Abstractions;
 using Xunit;
 
 namespace ResellerSystem.Modules.Sales.Tests;
@@ -48,9 +50,11 @@ public class SalesServiceValidationTests
     private readonly IItemCostBasisReader _costBasisReader = Substitute.For<IItemCostBasisReader>();
     private readonly ConnectionStringFactory _connectionStringFactory = null!; // not needed for validation-only paths
     private readonly ICurrentTenantAccessor _tenantAccessor = Substitute.For<ICurrentTenantAccessor>();
+    private readonly IAuditLogger _auditLogger = Substitute.For<IAuditLogger>();
+    private readonly ICurrentUserContext _currentUser = Substitute.For<ICurrentUserContext>();
 
     private SalesService CreateSut() =>
-        new(_dbContextFactory, _costBasisReader, _connectionStringFactory, _tenantAccessor);
+        new(_dbContextFactory, _costBasisReader, _connectionStringFactory, _tenantAccessor, _auditLogger, _currentUser);
 
     [Fact]
     public async Task CreateSaleAsync_rejects_negative_item_sale_price_without_touching_database()

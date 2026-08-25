@@ -120,6 +120,9 @@ public sealed partial class DashboardViewModel : ViewModelBase
     private void OpenInventory() => _navigation.ShowInventory();
 
     [RelayCommand]
+    private void OpenImport() => _navigation.ShowImport();
+
+    [RelayCommand]
     private void ChangePassword() => _navigation.ShowChangePassword();
 
     [RelayCommand]

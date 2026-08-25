@@ -3,7 +3,7 @@
 ; no services, no firewall rules, no PostgreSQL. Just files + shortcuts.
 
 #define MyAppName "Reseller System"
-#define MyAppVersion "0.1.3"
+#define MyAppVersion "0.1.4"
 #define MyAppPublisher "ResellerSystem"
 
 [Setup]

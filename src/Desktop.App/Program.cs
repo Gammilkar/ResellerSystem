@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 using Avalonia;
@@ -11,6 +12,17 @@ internal static class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        // Product Specification section 86: the app's currency is always
+        // USD, regardless of the Windows OS locale it happens to run
+        // under. Without this, {0:C} bindings (and unculture-qualified
+        // decimal.TryParse on number entry fields) silently follow
+        // CurrentCulture — e.g. render "1 234,56 ₽" and refuse to parse
+        // "150.00" on a Russian-locale Windows install. Must run before
+        // any thread (including Avalonia's UI thread) is created.
+        var usCulture = CultureInfo.GetCultureInfo("en-US");
+        CultureInfo.DefaultThreadCurrentCulture = usCulture;
+        CultureInfo.DefaultThreadCurrentUICulture = usCulture;
+
         var logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ResellerSystem Client", "logs");
         Directory.CreateDirectory(logDir);
 

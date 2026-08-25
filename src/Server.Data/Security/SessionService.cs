@@ -43,15 +43,22 @@ public sealed class SessionService : ISessionService
         return new SessionInfo(token, userId, expiresAt);
     }
 
-    public async Task<Guid?> ValidateTokenAsync(string token, CancellationToken ct = default)
+    public async Task<ValidatedSession?> ValidateTokenAsync(string token, CancellationToken ct = default)
     {
         await using var connection = new NpgsqlConnection(_connectionStringFactory.BuildMasterConnectionString());
         await connection.OpenAsync(ct);
         await using var cmd = new NpgsqlCommand(
-            "SELECT user_id FROM sessions WHERE token = @t AND expires_at > now();", connection);
+            """
+            SELECT u.id, u.username
+            FROM sessions s
+            JOIN users u ON u.id = s.user_id
+            WHERE s.token = @t AND s.expires_at > now();
+            """, connection);
         cmd.Parameters.AddWithValue("t", token);
-        var result = await cmd.ExecuteScalarAsync(ct);
-        return result is Guid userId ? userId : null;
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+        if (!await reader.ReadAsync(ct)) return null;
+
+        return new ValidatedSession(reader.GetGuid(0), reader.GetString(1));
     }
 
     public async Task RevokeAsync(string token, CancellationToken ct = default)

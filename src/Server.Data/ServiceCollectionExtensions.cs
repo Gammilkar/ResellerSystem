@@ -1,11 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ResellerSystem.Server.Application.Audit;
 using ResellerSystem.Server.Application.Backup;
 using ResellerSystem.Server.Application.Databases;
 using ResellerSystem.Server.Application.Modules;
 using ResellerSystem.Server.Application.Security;
 using ResellerSystem.Server.Application.Update;
+using ResellerSystem.Server.Data.Audit;
 using ResellerSystem.Server.Data.Backup;
 using ResellerSystem.Server.Data.Configuration;
 using ResellerSystem.Server.Data.Master;
@@ -49,6 +51,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuthenticationService, AuthenticationService>();
 
         services.AddScoped<IBackupService, PgBackupService>();
+
+        services.AddScoped<IAuditLogger, AuditLogger>();
 
         services.Configure<UpdateOptions>(configuration.GetSection(UpdateOptions.SectionName));
         services.AddHttpClient(nameof(UpdateService));

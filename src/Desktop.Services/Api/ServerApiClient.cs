@@ -129,6 +129,57 @@ public sealed class ServerApiClient : IServerApiClient
     public Task<DashboardSummaryDto> GetDashboardSummaryAsync(CancellationToken ct = default) =>
         SendAsync<DashboardSummaryDto>(HttpMethod.Get, "/api/v1/dashboard/summary", null, ct);
 
+    public Task<IReadOnlyList<ImportTargetFieldDto>> GetImportTargetFieldsAsync(CancellationToken ct = default) =>
+        SendAsync<IReadOnlyList<ImportTargetFieldDto>>(HttpMethod.Get, "/api/v1/import/target-fields", null, ct);
+
+    public Task<InspectXlsxResultDto> InspectXlsxAsync(string filePath, CancellationToken ct = default) =>
+        SendFileAsync<InspectXlsxResultDto>("/api/v1/import/xlsx/inspect", filePath, null, ct);
+
+    public Task<ImportBatchDto> UploadXlsxAsync(string filePath, IReadOnlyDictionary<string, string> mapping, CancellationToken ct = default) =>
+        SendFileAsync<ImportBatchDto>("/api/v1/import/xlsx/upload", filePath,
+            new Dictionary<string, string> { ["mapping"] = JsonSerializer.Serialize(mapping) }, ct);
+
+    public Task<ImportBatchDto> GetImportBatchAsync(Guid batchId, CancellationToken ct = default) =>
+        SendAsync<ImportBatchDto>(HttpMethod.Get, $"/api/v1/import/batches/{batchId}", null, ct);
+
+    public Task<ConfirmImportResultDto> ConfirmImportAsync(Guid batchId, CancellationToken ct = default) =>
+        SendAsync<ConfirmImportResultDto>(HttpMethod.Post, $"/api/v1/import/batches/{batchId}/confirm", null, ct);
+
+    public Task<IReadOnlyList<ImportMappingTemplateDto>> ListImportMappingTemplatesAsync(string importType, CancellationToken ct = default) =>
+        SendAsync<IReadOnlyList<ImportMappingTemplateDto>>(HttpMethod.Get, $"/api/v1/import/mapping-templates?importType={Uri.EscapeDataString(importType)}", null, ct);
+
+    public Task<ImportMappingTemplateDto> SaveImportMappingTemplateAsync(SaveMappingTemplateRequest request, CancellationToken ct = default) =>
+        SendAsync<ImportMappingTemplateDto>(HttpMethod.Post, "/api/v1/import/mapping-templates", request, ct);
+
+    private async Task<TResponse> SendFileAsync<TResponse>(string path, string filePath, IReadOnlyDictionary<string, string>? formFields, CancellationToken ct)
+    {
+        using var content = new MultipartFormDataContent();
+        await using var fileStream = File.OpenRead(filePath);
+        using var fileContent = new StreamContent(fileStream);
+        content.Add(fileContent, "file", Path.GetFileName(filePath));
+
+        if (formFields is not null)
+        {
+            foreach (var (key, value) in formFields)
+            {
+                content.Add(new StringContent(value), key);
+            }
+        }
+
+        using var response = await _httpClient.PostAsync(path, content, ct);
+        if (!response.IsSuccessStatusCode)
+        {
+            await ThrowApiExceptionAsync(response, ct);
+        }
+
+        var result = await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions, ct);
+        return result ?? throw new ServerApiException(new ApiError
+        {
+            Code = "EMPTY_RESPONSE",
+            Message = "Server returned an empty response body."
+        });
+    }
+
     private async Task SendNoContentAsync(HttpMethod method, string path, object? body, CancellationToken ct)
     {
         using var request = new HttpRequestMessage(method, path);

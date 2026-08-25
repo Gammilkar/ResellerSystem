@@ -1,0 +1,98 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ResellerSystem.Desktop.ViewModels"
+             xmlns:dto="using:ResellerSystem.Domain.Shared.Dto"
+             x:Class="ResellerSystem.Desktop.App.Views.ImportView"
+             x:DataType="vm:ImportViewModel">
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
+            <TextBlock Text="Import from Excel" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" />
+            <Button Content="Choose File..." Command="{Binding ChooseFileCommand}" IsEnabled="{Binding !IsBusy}" />
+            <TextBlock Text="{Binding SelectedFilePath}" VerticalAlignment="Center" Foreground="Gray" />
+            <Button Content="Back" Command="{Binding BackCommand}" />
+        </StackPanel>
+
+        <TextBlock DockPanel.Dock="Top" Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Margin="0,0,0,8" />
+        <TextBlock DockPanel.Dock="Top" Text="{Binding StatusMessage}" Foreground="Green" TextWrapping="Wrap"
+                    IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Margin="0,0,0,8" />
+        <TextBlock DockPanel.Dock="Top" Text="{Binding ConfirmResultSummary}" FontWeight="Bold" TextWrapping="Wrap"
+                    IsVisible="{Binding ConfirmResultSummary, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Margin="0,0,0,8" />
+
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,12"
+                    IsVisible="{Binding HasColumns}">
+            <TextBlock Text="Template:" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding Templates}" SelectedItem="{Binding SelectedTemplate}" Width="160">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate DataType="dto:ImportMappingTemplateDto">
+                        <TextBlock Text="{Binding Name}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBox Text="{Binding NewTemplateName}" Watermark="New template name" Width="160" />
+            <Button Content="Save as Template" Command="{Binding SaveTemplateCommand}" />
+        </StackPanel>
+
+        <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,*" Margin="0,12,0,0" IsVisible="{Binding HasColumns}">
+            <StackPanel Grid.Column="0" Spacing="6">
+                <TextBlock Text="{Binding RowCount, StringFormat='Staged rows: {0}'}" FontWeight="Bold" IsVisible="{Binding HasBatch}" />
+                <TextBlock Text="{Binding ValidRowCount, StringFormat='Ready to import: {0}'}" IsVisible="{Binding HasBatch}" />
+                <Button Content="Upload &amp; Preview" Command="{Binding UploadCommand}"
+                        IsEnabled="{Binding !IsBusy}" HorizontalAlignment="Left" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="6" IsVisible="{Binding HasBatch}">
+                <TextBlock Text="Rows with errors or possible duplicates are skipped automatically." FontSize="11" Foreground="Gray" />
+                <Button Content="Confirm Import" Command="{Binding ConfirmCommand}"
+                        IsEnabled="{Binding !IsBusy}" HorizontalAlignment="Left" />
+            </StackPanel>
+        </Grid>
+
+        <Grid ColumnDefinitions="360,*" IsVisible="{Binding HasColumns}">
+            <ScrollViewer Grid.Column="0" Margin="0,0,16,0">
+                <ItemsControl ItemsSource="{Binding MappingRows}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="vm:MappingFieldRow">
+                            <Grid ColumnDefinitions="200,*" Margin="0,0,0,4">
+                                <TextBlock Grid.Column="0" VerticalAlignment="Center" TextWrapping="Wrap">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="[{0}] {1}">
+                                            <Binding Path="Field.Group" />
+                                            <Binding Path="Field.DisplayName" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                                <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableColumns}"
+                                          SelectedItem="{Binding SelectedColumn}" Width="150" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <ScrollViewer Grid.Column="1">
+                <ItemsControl ItemsSource="{Binding PreviewRows}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="dto:ImportStagingRowDto">
+                            <Border BorderBrush="Gray" BorderThickness="0,0,0,1" Padding="4">
+                                <StackPanel Spacing="2">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{Binding RowIndex, StringFormat='Row {0}'}" FontWeight="Bold" />
+                                        <TextBlock Text="OK" Foreground="Green" IsVisible="{Binding IsValid}" />
+                                        <TextBlock Text="Duplicate — skipped" Foreground="Orange" IsVisible="{Binding PossibleDuplicate}" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding ValidationErrors}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding}" Foreground="Red" FontSize="11" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+    </DockPanel>
+</UserControl>

@@ -24,7 +24,9 @@ public sealed class Return
     public string? Comment { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
+    public string CreatedBy { get; set; } = "system";
     public DateTimeOffset UpdatedAt { get; set; }
+    public string UpdatedBy { get; set; } = "system";
 
     private Return() { }
 

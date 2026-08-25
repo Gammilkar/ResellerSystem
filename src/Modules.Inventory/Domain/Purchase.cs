@@ -10,6 +10,7 @@ public sealed class Purchase
     public decimal? SalesTaxRate { get; set; }
     public string? PaymentMethod { get; set; }
     public bool UsedResellerPermit { get; set; }
+    public string PurchaseType { get; set; } = "TaxPaid"; // "TaxPaid" | "ResellerPermit" | "NoTax" — Product Specification section 26
     public string? Comment { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
@@ -23,7 +24,7 @@ public sealed class Purchase
     private Purchase() { } // EF Core
 
     public static Purchase CreateNew(DateOnly purchaseDate, string sourceName, decimal totalAmount,
-        decimal salesTaxAmount, decimal? salesTaxRate, string? paymentMethod, bool usedResellerPermit, string? comment)
+        decimal salesTaxAmount, decimal? salesTaxRate, string? paymentMethod, string purchaseType, string? comment)
     {
         var now = DateTimeOffset.UtcNow;
         return new Purchase
@@ -35,7 +36,8 @@ public sealed class Purchase
             SalesTaxAmount = salesTaxAmount,
             SalesTaxRate = salesTaxRate,
             PaymentMethod = paymentMethod,
-            UsedResellerPermit = usedResellerPermit,
+            PurchaseType = purchaseType,
+            UsedResellerPermit = purchaseType == "ResellerPermit",
             Comment = comment,
             CreatedAt = now,
             UpdatedAt = now

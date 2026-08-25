@@ -3,7 +3,9 @@ using NSubstitute;
 using ResellerSystem.Domain.Shared.Dto;
 using ResellerSystem.Modules.Inventory.Application;
 using ResellerSystem.Modules.Inventory.Data;
+using ResellerSystem.Server.Application.Audit;
 using ResellerSystem.Server.Application.Exceptions;
+using ResellerSystem.Server.Domain.Abstractions;
 using Xunit;
 
 namespace ResellerSystem.Modules.Inventory.Tests;
@@ -19,11 +21,13 @@ namespace ResellerSystem.Modules.Inventory.Tests;
 public class InventoryServiceValidationTests
 {
     private readonly IInventoryDbContextFactory _dbContextFactory = Substitute.For<IInventoryDbContextFactory>();
+    private readonly IAuditLogger _auditLogger = Substitute.For<IAuditLogger>();
+    private readonly ICurrentUserContext _currentUser = Substitute.For<ICurrentUserContext>();
     private readonly InventoryService _sut;
 
     public InventoryServiceValidationTests()
     {
-        _sut = new InventoryService(_dbContextFactory);
+        _sut = new InventoryService(_dbContextFactory, _auditLogger, _currentUser);
     }
 
     [Fact]

@@ -48,13 +48,17 @@ public sealed class SessionAuthenticationHandler : AuthenticationHandler<Session
         }
 
         var token = value["Bearer ".Length..].Trim();
-        var userId = await _sessionService.ValidateTokenAsync(token, Context.RequestAborted);
-        if (userId is null)
+        var session = await _sessionService.ValidateTokenAsync(token, Context.RequestAborted);
+        if (session is null)
         {
             return AuthenticateResult.Fail("Invalid or expired session token.");
         }
 
-        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, userId.Value.ToString()) };
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, session.UserId.ToString()),
+            new Claim(ClaimTypes.Name, session.Username)
+        };
         var identity = new ClaimsIdentity(claims, SessionAuthenticationOptions.SchemeName);
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, SessionAuthenticationOptions.SchemeName);

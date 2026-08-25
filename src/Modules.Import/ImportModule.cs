@@ -8,17 +8,17 @@ using ResellerSystem.Server.Modules.Abstractions;
 namespace ResellerSystem.Modules.Import;
 
 /// <summary>
-/// The one module that intentionally depends on another module directly
-/// (Modules.Inventory's IInventoryService) — see the .csproj comment and
-/// KNOWN_LIMITATIONS.md "Import module scope" for why. Requires
-/// InventoryModule to be registered in Server.Host's module list BEFORE
-/// this one (already true — see Program.cs ordering).
+/// The one module that intentionally depends on other modules directly
+/// (IInventoryService, ISalesService, IExpensesService) — see the .csproj
+/// comment and KNOWN_LIMITATIONS.md "Import module scope" for why.
+/// Requires Inventory/Sales/Expenses modules to already be registered in
+/// Server.Host's module list before this one.
 /// </summary>
 public sealed class ImportModule : IResellerModule
 {
     public string ModuleKey => "import";
     public string DisplayName => "Import";
-    public string Version => "0.1.0";
+    public string Version => "0.2.0";
     public string MinimumCoreVersion => "0.1.0";
     public Assembly MigrationsAssembly => Assembly.GetExecutingAssembly();
     public string MigrationsRootNamespace => "ResellerSystem.Modules.Import";
