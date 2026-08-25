@@ -57,6 +57,18 @@ public interface IServerApiClient
     Task<ItemDto> UpdateItemAsync(Guid id, UpdateItemRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<InventoryTableRowDto>> ListInventoryTableAsync(CancellationToken ct = default);
 
+    Task<ListingDto> CreateListingAsync(CreateListingRequest request, CancellationToken ct = default);
+    Task<ListingDto> UpdateListingAsync(Guid id, UpdateListingRequest request, CancellationToken ct = default);
+    Task<SaleDto> CreateSaleAsync(CreateSaleRequest request, CancellationToken ct = default);
+    Task<SaleDto> UpdateSaleAsync(Guid id, UpdateSaleRequest request, CancellationToken ct = default);
+
+    Task<IReadOnlyList<SupplierDto>> ListSuppliersAsync(CancellationToken ct = default);
+    Task<SupplierDto> GetSupplierAsync(Guid id, CancellationToken ct = default);
+    Task<SupplierDto> CreateSupplierAsync(CreateSupplierRequest request, CancellationToken ct = default);
+    Task<SupplierDto> UpdateSupplierAsync(Guid id, UpdateSupplierRequest request, CancellationToken ct = default);
+    Task DeleteSupplierAsync(Guid id, CancellationToken ct = default);
+    Task<IReadOnlyList<SupplierPurchaseHistoryRowDto>> GetSupplierPurchaseHistoryAsync(Guid id, CancellationToken ct = default);
+
     Task<DashboardSummaryDto> GetDashboardSummaryAsync(CancellationToken ct = default);
 
     Task<IReadOnlyList<ImportTargetFieldDto>> GetImportTargetFieldsAsync(CancellationToken ct = default);

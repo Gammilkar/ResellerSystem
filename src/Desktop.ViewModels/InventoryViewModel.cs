@@ -147,6 +147,156 @@ public sealed partial class InventoryViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task OpenPurchaseDateAsync(InventoryTableRowDto row)
+    {
+        var newDate = await ShowDatePickerAsync("Дата покупки", row.PurchaseDate);
+        if (newDate is null) return;
+
+        ErrorMessage = null;
+        try
+        {
+            await _apiClient.UpdatePurchaseAsync(row.PurchaseId, new UpdatePurchaseRequest { PurchaseDate = newDate });
+            await LoadAsync();
+        }
+        catch (ServerApiException ex)
+        {
+            ErrorMessage = ex.Error.Message;
+        }
+    }
+
+    [RelayCommand]
+    private async Task OpenListingDateAsync(InventoryTableRowDto row)
+    {
+        var newDate = await ShowDatePickerAsync("Дата публикации", row.ListingPublishedDate);
+        if (newDate is null) return;
+        if (await SaveListingFieldAsync(row, marketplace: null, publishedDate: newDate)) await LoadAsync();
+    }
+
+    [RelayCommand]
+    private async Task OpenSaleDateAsync(InventoryTableRowDto row)
+    {
+        var newDate = await ShowDatePickerAsync("Дата продажи", row.SaleDate);
+        if (newDate is null) return;
+        if (await SaveSaleFieldAsync(row, marketplace: null, saleDate: newDate, itemSalePrice: null)) await LoadAsync();
+    }
+
+    private async Task<DateOnly?> ShowDatePickerAsync(string title, DateOnly? initial)
+    {
+        var vm = new DatePickerDialogViewModel(title, initial);
+        return await _dialogService.ShowAsync<DatePickerDialogViewModel, DateOnly?>(vm);
+    }
+
+    /// <summary>Not every Item has a Listing yet — the first edit made
+    /// through Дата публикации/Marketplace creates one (minimal valid
+    /// CreateListingRequest only needs ItemId+Marketplace); later edits
+    /// PATCH the existing row. Whichever field triggered this call carries
+    /// the user's actual input; the other gets a sensible default rather
+    /// than blocking the edit.</summary>
+    private async Task<bool> SaveListingFieldAsync(InventoryTableRowDto row, string? marketplace, DateOnly? publishedDate)
+    {
+        ErrorMessage = null;
+        try
+        {
+            if (row.ListingId is { } listingId)
+            {
+                await _apiClient.UpdateListingAsync(listingId, new UpdateListingRequest { Marketplace = marketplace, PublishedDate = publishedDate });
+            }
+            else
+            {
+                await _apiClient.CreateListingAsync(new CreateListingRequest
+                {
+                    ItemId = row.ItemId,
+                    Marketplace = marketplace ?? "eBay",
+                    PublishedDate = publishedDate ?? DateOnly.FromDateTime(DateTime.Today)
+                });
+            }
+            return true;
+        }
+        catch (ServerApiException ex)
+        {
+            ErrorMessage = ex.Error.Message;
+            return false;
+        }
+    }
+
+    /// <summary>Same create-if-missing idea as SaveListingFieldAsync, but
+    /// CreateSaleRequest also requires ItemSalePrice/PayoutAmount.
+    /// PayoutAmount defaults to the same value as ItemSalePrice — a
+    /// placeholder, not a real payout calculation (shipping/fees/tax
+    /// aren't captured by this grid); reconciling those is out of scope
+    /// here and expects a future full Sale-editing screen.</summary>
+    private async Task<bool> SaveSaleFieldAsync(InventoryTableRowDto row, string? marketplace, DateOnly? saleDate, decimal? itemSalePrice)
+    {
+        ErrorMessage = null;
+        try
+        {
+            if (row.SaleId is { } saleId)
+            {
+                await _apiClient.UpdateSaleAsync(saleId, new UpdateSaleRequest { Marketplace = marketplace, SaleDate = saleDate, ItemSalePrice = itemSalePrice });
+            }
+            else
+            {
+                var price = itemSalePrice ?? row.SalePrice ?? 0;
+                await _apiClient.CreateSaleAsync(new CreateSaleRequest
+                {
+                    ItemId = row.ItemId,
+                    ListingId = row.ListingId,
+                    Marketplace = marketplace ?? "eBay",
+                    SaleDate = saleDate ?? DateOnly.FromDateTime(DateTime.Today),
+                    ItemSalePrice = price,
+                    PayoutAmount = price
+                });
+            }
+            return true;
+        }
+        catch (ServerApiException ex)
+        {
+            ErrorMessage = ex.Error.Message;
+            return false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task OpenPurchaseSourceAsync(InventoryTableRowDto row)
+    {
+        var pickerVm = new SupplierPickerViewModel(_apiClient, _dialogService);
+        var chosen = await _dialogService.ShowAsync<SupplierPickerViewModel, SupplierDto>(pickerVm);
+        if (chosen is null) return;
+
+        ErrorMessage = null;
+        try
+        {
+            await _apiClient.UpdatePurchaseAsync(row.PurchaseId, new UpdatePurchaseRequest { SupplierId = chosen.Id });
+            await LoadAsync();
+        }
+        catch (ServerApiException ex)
+        {
+            ErrorMessage = ex.Error.Message;
+        }
+    }
+
+    [RelayCommand]
+    private async Task UpdateListingMarketplaceAsync((InventoryTableRowDto Row, string Marketplace) args)
+    {
+        if (args.Marketplace == args.Row.ListingMarketplace) return;
+        if (await SaveListingFieldAsync(args.Row, marketplace: args.Marketplace, publishedDate: null)) await LoadAsync();
+    }
+
+    [RelayCommand]
+    private async Task UpdateSaleMarketplaceAsync((InventoryTableRowDto Row, string Marketplace) args)
+    {
+        if (args.Marketplace == args.Row.SaleMarketplace) return;
+        if (await SaveSaleFieldAsync(args.Row, marketplace: args.Marketplace, saleDate: null, itemSalePrice: null)) await LoadAsync();
+    }
+
+    [RelayCommand]
+    private async Task UpdateSalePriceAsync((InventoryTableRowDto Row, decimal Price) args)
+    {
+        if (args.Price == args.Row.SalePrice) return;
+        if (await SaveSaleFieldAsync(args.Row, marketplace: null, saleDate: null, itemSalePrice: args.Price)) await LoadAsync();
+    }
+
+    [RelayCommand]
     private void ToggleNewPurchaseForm() => ShowNewPurchaseForm = !ShowNewPurchaseForm;
 
     [RelayCommand]

@@ -12,4 +12,5 @@ public interface INavigationService
     void ShowInventory();
     void ShowChangePassword();
     void ShowImport();
+    void ShowSuppliers();
 }

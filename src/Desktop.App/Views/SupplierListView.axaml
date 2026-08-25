@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ResellerSystem.Desktop.ViewModels"
+             xmlns:dto="using:ResellerSystem.Domain.Shared.Dto"
+             x:Class="ResellerSystem.Desktop.App.Views.SupplierListView"
+             x:DataType="vm:SupplierListViewModel">
+    <DockPanel>
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*" Margin="0,0,0,12">
+            <TextBlock Grid.Column="0" Text="Поставщики" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <Button Grid.Column="1" Content="Back" Command="{Binding BackCommand}" Margin="0,0,8,0" />
+            <Button Grid.Column="2" Content="Обновить" Command="{Binding LoadCommand}" Margin="0,0,8,0" />
+            <Button Grid.Column="3" Content="Новый" Command="{Binding CreateCommand}" Margin="0,0,8,0" />
+            <Button Grid.Column="4" Content="Редактировать" Command="{Binding EditCommand}" Margin="0,0,8,0" />
+            <Button Grid.Column="5" Content="Удалить" Command="{Binding DeleteCommand}" />
+        </Grid>
+
+        <TextBlock DockPanel.Dock="Top" Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap"
+                   IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                   Margin="0,0,0,8" />
+
+        <Grid ColumnDefinitions="360,*">
+            <ListBox Grid.Column="0" ItemsSource="{Binding Suppliers}" SelectedItem="{Binding SelectedSupplier}" Margin="0,0,12,0">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="dto:SupplierDto">
+                        <StackPanel Margin="4">
+                            <TextBlock Text="{Binding Name}" FontWeight="Bold" />
+                            <TextBlock Text="{Binding Phone}" FontSize="11" Foreground="Gray"
+                                       IsVisible="{Binding Phone, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                            <TextBlock Text="{Binding Email}" FontSize="11" Foreground="Gray"
+                                       IsVisible="{Binding Email, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <DockPanel Grid.Column="1">
+                <TextBlock DockPanel.Dock="Top" Text="История закупок" FontWeight="Bold" Margin="0,0,0,8" />
+                <DataGrid ItemsSource="{Binding PurchaseHistory}" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="All">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Дата" Binding="{Binding PurchaseDate}" Width="120" />
+                        <DataGridTextColumn Header="Сумма" Binding="{Binding TotalAmount, StringFormat={}{0:C}}" Width="120" />
+                        <DataGridTextColumn Header="Товаров" Binding="{Binding ItemCount}" Width="100" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </Grid>
+    </DockPanel>
+</UserControl>

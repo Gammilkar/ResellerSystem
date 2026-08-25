@@ -135,6 +135,36 @@ public sealed class ServerApiClient : IServerApiClient
     public Task<IReadOnlyList<InventoryTableRowDto>> ListInventoryTableAsync(CancellationToken ct = default) =>
         SendAsync<IReadOnlyList<InventoryTableRowDto>>(HttpMethod.Get, "/api/v1/inventory/items/table", null, ct);
 
+    public Task<ListingDto> CreateListingAsync(CreateListingRequest request, CancellationToken ct = default) =>
+        SendAsync<ListingDto>(HttpMethod.Post, "/api/v1/sales/listings", request, ct);
+
+    public Task<ListingDto> UpdateListingAsync(Guid id, UpdateListingRequest request, CancellationToken ct = default) =>
+        SendAsync<ListingDto>(HttpMethod.Patch, $"/api/v1/sales/listings/{id}", request, ct);
+
+    public Task<SaleDto> CreateSaleAsync(CreateSaleRequest request, CancellationToken ct = default) =>
+        SendAsync<SaleDto>(HttpMethod.Post, "/api/v1/sales", request, ct);
+
+    public Task<SaleDto> UpdateSaleAsync(Guid id, UpdateSaleRequest request, CancellationToken ct = default) =>
+        SendAsync<SaleDto>(HttpMethod.Patch, $"/api/v1/sales/{id}", request, ct);
+
+    public Task<IReadOnlyList<SupplierDto>> ListSuppliersAsync(CancellationToken ct = default) =>
+        SendAsync<IReadOnlyList<SupplierDto>>(HttpMethod.Get, "/api/v1/inventory/suppliers", null, ct);
+
+    public Task<SupplierDto> GetSupplierAsync(Guid id, CancellationToken ct = default) =>
+        SendAsync<SupplierDto>(HttpMethod.Get, $"/api/v1/inventory/suppliers/{id}", null, ct);
+
+    public Task<SupplierDto> CreateSupplierAsync(CreateSupplierRequest request, CancellationToken ct = default) =>
+        SendAsync<SupplierDto>(HttpMethod.Post, "/api/v1/inventory/suppliers", request, ct);
+
+    public Task<SupplierDto> UpdateSupplierAsync(Guid id, UpdateSupplierRequest request, CancellationToken ct = default) =>
+        SendAsync<SupplierDto>(HttpMethod.Patch, $"/api/v1/inventory/suppliers/{id}", request, ct);
+
+    public Task DeleteSupplierAsync(Guid id, CancellationToken ct = default) =>
+        SendNoContentAsync(HttpMethod.Delete, $"/api/v1/inventory/suppliers/{id}", null, ct);
+
+    public Task<IReadOnlyList<SupplierPurchaseHistoryRowDto>> GetSupplierPurchaseHistoryAsync(Guid id, CancellationToken ct = default) =>
+        SendAsync<IReadOnlyList<SupplierPurchaseHistoryRowDto>>(HttpMethod.Get, $"/api/v1/inventory/suppliers/{id}/purchases", null, ct);
+
     public Task<DashboardSummaryDto> GetDashboardSummaryAsync(CancellationToken ct = default) =>
         SendAsync<DashboardSummaryDto>(HttpMethod.Get, "/api/v1/dashboard/summary", null, ct);
 

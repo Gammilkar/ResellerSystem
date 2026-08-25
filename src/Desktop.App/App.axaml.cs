@@ -49,6 +49,7 @@ public sealed class App : Application
         services.AddTransient<InventoryViewModel>();
         services.AddTransient<ChangePasswordViewModel>();
         services.AddTransient<ImportViewModel>();
+        services.AddTransient<SupplierListViewModel>();
 
         services.AddSingleton<INavigationService, NavigationService>();
 
@@ -58,7 +59,10 @@ public sealed class App : Application
         services.AddSingleton<IDialogService>(sp => new DialogService(
             new Dictionary<Type, Func<Window>>
             {
-                [typeof(ItemCardDialogViewModel)] = () => new ItemCardDialog()
+                [typeof(ItemCardDialogViewModel)] = () => new ItemCardDialog(),
+                [typeof(DatePickerDialogViewModel)] = () => new DatePickerDialog(),
+                [typeof(SupplierEditDialogViewModel)] = () => new SupplierEditDialog(),
+                [typeof(SupplierPickerViewModel)] = () => new SupplierPickerDialog()
             },
             () => (Window)((IClassicDesktopStyleApplicationLifetime)ApplicationLifetime!).MainWindow!));
 

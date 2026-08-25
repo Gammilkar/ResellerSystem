@@ -91,6 +91,23 @@
                     <Setter Property="Foreground" Value="Black" />
                     <Setter Property="FontSize" Value="{Binding HeaderFontSize}" />
                 </Style>
+                <!-- Shared look for every clickable cell (Наименование, the
+                     3 dates, Место покупки) — a real Button, not a bare
+                     TextBlock with a manual pointer handler: DataGridCell
+                     reliably delivers clicks to standard interactive
+                     controls placed in a CellTemplate (see the row-height
+                     drag bug fixed in commit 48689d3, caused by exactly
+                     the opposite approach). -->
+                <Style Selector="Button.cell-link">
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="HorizontalContentAlignment" Value="Left" />
+                    <Setter Property="HorizontalAlignment" Value="Stretch" />
+                    <Setter Property="Padding" Value="6,4" />
+                </Style>
+                <Style Selector="Button.cell-link /template/ ContentPresenter">
+                    <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
+                </Style>
             </DataGrid.Styles>
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="№ товара" Width="90" SortMemberPath="ItemNumber"
@@ -105,22 +122,9 @@
                                         IsVisible="{Binding ShowNameColumn}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
-                            <!-- A Button (not a bare TextBlock) — DataGridCell reliably
-                                 delivers clicks to standard interactive controls placed
-                                 in a CellTemplate; a manually-wired PointerPressed on a
-                                 non-interactive element gets swallowed (see the row-height
-                                 drag bug fixed in commit 48689d3). -->
-                            <Button Content="{Binding Name}"
+                            <Button Classes="cell-link" Content="{Binding Name}"
                                     Command="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).OpenItemCardCommand}"
-                                    CommandParameter="{Binding}"
-                                    Background="Transparent" BorderThickness="0"
-                                    HorizontalContentAlignment="Left" Padding="6,4">
-                                <Button.Styles>
-                                    <Style Selector="Button /template/ ContentPresenter">
-                                        <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
-                                    </Style>
-                                </Button.Styles>
-                            </Button>
+                                    CommandParameter="{Binding}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -141,7 +145,9 @@
                                         IsVisible="{Binding ShowPurchaseDateColumn}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
-                            <TextBlock Text="{Binding PurchaseDate}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                            <Button Classes="cell-link" Content="{Binding PurchaseDate}"
+                                    Command="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).OpenPurchaseDateCommand}"
+                                    CommandParameter="{Binding}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -149,7 +155,9 @@
                                         IsVisible="{Binding ShowPurchaseSourceColumn}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
-                            <TextBlock Text="{Binding PurchaseSourceName}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                            <Button Classes="cell-link" Content="{Binding PurchaseSourceName}"
+                                    Command="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).OpenPurchaseSourceCommand}"
+                                    CommandParameter="{Binding}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -178,7 +186,9 @@
                                         IsVisible="{Binding ShowListingDateColumn}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
-                            <TextBlock Text="{Binding ListingPublishedDate}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                            <Button Classes="cell-link" Content="{Binding ListingPublishedDate, TargetNullValue='—'}"
+                                    Command="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).OpenListingDateCommand}"
+                                    CommandParameter="{Binding}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -186,7 +196,11 @@
                                         IsVisible="{Binding ShowMarketplaceColumn}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
-                            <TextBlock Text="{Binding ListingMarketplace}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                            <AutoCompleteBox ItemsSource="{x:Static vm:MarketplaceOptions.Listing}"
+                                      Text="{Binding ListingMarketplace, Mode=OneWay}"
+                                      FilterMode="StartsWith"
+                                      LostFocus="ListingMarketplaceCombo_LostFocus"
+                                      HorizontalAlignment="Stretch" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -194,7 +208,9 @@
                                         IsVisible="{Binding ShowSaleDateColumn}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
-                            <TextBlock Text="{Binding SaleDate}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                            <Button Classes="cell-link" Content="{Binding SaleDate, TargetNullValue='—'}"
+                                    Command="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).OpenSaleDateCommand}"
+                                    CommandParameter="{Binding}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -202,7 +218,11 @@
                                         IsVisible="{Binding ShowSaleMarketplaceColumn}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
-                            <TextBlock Text="{Binding SaleMarketplace}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                            <AutoCompleteBox ItemsSource="{x:Static vm:MarketplaceOptions.Sale}"
+                                      Text="{Binding SaleMarketplace, Mode=OneWay}"
+                                      FilterMode="StartsWith"
+                                      LostFocus="SaleMarketplaceCombo_LostFocus"
+                                      HorizontalAlignment="Stretch" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -210,7 +230,9 @@
                                         IsVisible="{Binding ShowSalePriceColumn}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
-                            <TextBlock Text="{Binding SalePrice, StringFormat={}{0:C}}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                            <TextBox Text="{Binding SalePrice, Mode=OneWay, StringFormat={}{0:0.00}}"
+                                     LostFocus="SalePriceBox_LostFocus"
+                                     Background="Transparent" BorderThickness="0" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

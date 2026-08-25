@@ -1,0 +1,36 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ResellerSystem.Desktop.ViewModels"
+        xmlns:dto="using:ResellerSystem.Domain.Shared.Dto"
+        x:Class="ResellerSystem.Desktop.App.Views.SupplierPickerDialog"
+        x:DataType="vm:SupplierPickerViewModel"
+        Title="Выбор поставщика"
+        Width="420" Height="480"
+        WindowStartupLocation="CenterOwner">
+    <DockPanel Margin="16">
+        <TextBlock DockPanel.Dock="Top" Text="Поставщик" FontWeight="Bold" FontSize="16" Margin="0,0,0,10" />
+
+        <TextBlock DockPanel.Dock="Top" Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap"
+                   IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Margin="0,0,0,8" />
+
+        <TextBox DockPanel.Dock="Top" Text="{Binding FilterText}" Watermark="Поиск по названию..." Margin="0,0,0,8" />
+
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="Создать нового" Command="{Binding CreateNewCommand}" />
+            <Button Content="Отмена" Command="{Binding CancelCommand}" />
+            <Button Content="Выбрать" Command="{Binding SelectCommand}" />
+        </StackPanel>
+
+        <ListBox ItemsSource="{Binding FilteredSuppliers}" SelectedItem="{Binding SelectedSupplier}">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="dto:SupplierDto">
+                    <StackPanel Margin="4">
+                        <TextBlock Text="{Binding Name}" FontWeight="Bold" />
+                        <TextBlock Text="{Binding Phone}" FontSize="11" Foreground="Gray"
+                                   IsVisible="{Binding Phone, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </DockPanel>
+</Window>
