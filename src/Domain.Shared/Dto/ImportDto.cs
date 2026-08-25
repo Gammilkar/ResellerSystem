@@ -10,7 +10,14 @@ public sealed class ImportTargetFieldDto
 
 public sealed class InspectXlsxResultDto
 {
+    public required IReadOnlyList<string> SheetNames { get; init; }
+    public required string SelectedSheet { get; init; }
     public required IReadOnlyList<string> Columns { get; init; }
+
+    /// <summary>Best-guess target field -> column mapping, computed
+    /// server-side from column headers (see ImportColumnMatcher) — a
+    /// starting point the user can still adjust, not a final answer.</summary>
+    public required IReadOnlyDictionary<string, string> SuggestedMapping { get; init; }
 }
 
 public sealed class ImportMappingTemplateDto

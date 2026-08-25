@@ -132,12 +132,16 @@ public sealed class ServerApiClient : IServerApiClient
     public Task<IReadOnlyList<ImportTargetFieldDto>> GetImportTargetFieldsAsync(CancellationToken ct = default) =>
         SendAsync<IReadOnlyList<ImportTargetFieldDto>>(HttpMethod.Get, "/api/v1/import/target-fields", null, ct);
 
-    public Task<InspectXlsxResultDto> InspectXlsxAsync(string filePath, CancellationToken ct = default) =>
-        SendFileAsync<InspectXlsxResultDto>("/api/v1/import/xlsx/inspect", filePath, null, ct);
+    public Task<InspectXlsxResultDto> InspectXlsxAsync(string filePath, string? sheetName = null, CancellationToken ct = default) =>
+        SendFileAsync<InspectXlsxResultDto>("/api/v1/import/xlsx/inspect", filePath,
+            sheetName is null ? null : new Dictionary<string, string> { ["sheetName"] = sheetName }, ct);
 
-    public Task<ImportBatchDto> UploadXlsxAsync(string filePath, IReadOnlyDictionary<string, string> mapping, CancellationToken ct = default) =>
-        SendFileAsync<ImportBatchDto>("/api/v1/import/xlsx/upload", filePath,
-            new Dictionary<string, string> { ["mapping"] = JsonSerializer.Serialize(mapping) }, ct);
+    public Task<ImportBatchDto> UploadXlsxAsync(string filePath, string? sheetName, IReadOnlyDictionary<string, string> mapping, CancellationToken ct = default)
+    {
+        var formFields = new Dictionary<string, string> { ["mapping"] = JsonSerializer.Serialize(mapping) };
+        if (sheetName is not null) formFields["sheetName"] = sheetName;
+        return SendFileAsync<ImportBatchDto>("/api/v1/import/xlsx/upload", filePath, formFields, ct);
+    }
 
     public Task<ImportBatchDto> GetImportBatchAsync(Guid batchId, CancellationToken ct = default) =>
         SendAsync<ImportBatchDto>(HttpMethod.Get, $"/api/v1/import/batches/{batchId}", null, ct);

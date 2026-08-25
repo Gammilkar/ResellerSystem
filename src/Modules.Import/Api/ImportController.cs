@@ -19,19 +19,19 @@ public sealed class ImportController : ControllerBase
 
     [HttpPost("xlsx/inspect")]
     [RequestSizeLimit(50_000_000)]
-    public async Task<ActionResult<InspectXlsxResultDto>> InspectXlsx(IFormFile file, CancellationToken ct)
+    public async Task<ActionResult<InspectXlsxResultDto>> InspectXlsx(IFormFile file, [FromForm] string? sheetName, CancellationToken ct)
     {
         await using var stream = file.OpenReadStream();
-        return Ok(await _service.InspectXlsxAsync(stream, ct));
+        return Ok(await _service.InspectXlsxAsync(stream, sheetName, ct));
     }
 
     [HttpPost("xlsx/upload")]
     [RequestSizeLimit(50_000_000)]
-    public async Task<ActionResult<ImportBatchDto>> UploadXlsx(IFormFile file, [FromForm] string mapping, CancellationToken ct)
+    public async Task<ActionResult<ImportBatchDto>> UploadXlsx(IFormFile file, [FromForm] string? sheetName, [FromForm] string mapping, CancellationToken ct)
     {
         var mappingDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(mapping) ?? new();
         await using var stream = file.OpenReadStream();
-        return Ok(await _service.UploadXlsxAsync(stream, file.FileName, mappingDict, ct));
+        return Ok(await _service.UploadXlsxAsync(stream, file.FileName, sheetName, mappingDict, ct));
     }
 
     [HttpPost("csv/upload")]

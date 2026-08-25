@@ -32,6 +32,7 @@ public static class ImportTargetFields
         new() { Key = "item.notes", DisplayName = "Notes", Group = "Item" },
         new() { Key = "item.purchasePrice", DisplayName = "Item Purchase Price", Group = "Item", Required = true },
         new() { Key = "item.costBasisOverride", DisplayName = "Cost Basis (override)", Group = "Item" },
+        new() { Key = "item.quantity", DisplayName = "Quantity (splits into that many identical Items)", Group = "Item" },
 
         // Listing
         new() { Key = "listing.marketplace", DisplayName = "Marketplace (Listing)", Group = "Listing" },

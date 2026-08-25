@@ -39,11 +39,13 @@ public sealed partial class ImportViewModel : ViewModelBase
     }
 
     public ObservableCollection<string> SourceColumns { get; } = new();
+    public ObservableCollection<string> SheetNames { get; } = new();
     public ObservableCollection<MappingFieldRow> MappingRows { get; } = new();
     public ObservableCollection<ImportMappingTemplateDto> Templates { get; } = new();
     public ObservableCollection<ImportStagingRowDto> PreviewRows { get; } = new();
 
     [ObservableProperty] private string? _selectedFilePath;
+    [ObservableProperty] private string? _selectedSheetName;
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty] private string? _errorMessage;
     [ObservableProperty] private string? _statusMessage;
@@ -52,9 +54,12 @@ public sealed partial class ImportViewModel : ViewModelBase
     [ObservableProperty] private Guid? _currentBatchId;
     [ObservableProperty] private bool _hasColumns;
     [ObservableProperty] private bool _hasBatch;
+    [ObservableProperty] private bool _hasMultipleSheets;
     [ObservableProperty] private int _rowCount;
     [ObservableProperty] private int _validRowCount;
     [ObservableProperty] private string? _confirmResultSummary;
+
+    private bool _suppressSheetChangeReload;
 
     private const string ImportType = "xlsx-full";
 
@@ -89,30 +94,51 @@ public sealed partial class ImportViewModel : ViewModelBase
         PreviewRows.Clear();
         CurrentBatchId = null;
         HasBatch = false;
+        HasColumns = false;
         ConfirmResultSummary = null;
 
         var path = await _filePicker.PickFileAsync("Choose an Excel file", "xlsx");
         if (path is null) return;
 
         SelectedFilePath = path;
+        await InspectAsync(sheetName: null);
+    }
+
+    /// <summary>Re-inspects the already-chosen file, either to auto-pick a
+    /// sheet (sheetName null, first call after ChooseFileAsync) or because
+    /// the user picked a different sheet from SheetNames.</summary>
+    private async Task InspectAsync(string? sheetName)
+    {
+        if (SelectedFilePath is null) return;
+
         IsBusy = true;
         try
         {
-            var result = await _apiClient.InspectXlsxAsync(path);
+            var result = await _apiClient.InspectXlsxAsync(SelectedFilePath, sheetName);
+
+            _suppressSheetChangeReload = true;
+            SheetNames.Clear();
+            foreach (var s in result.SheetNames) SheetNames.Add(s);
+            HasMultipleSheets = SheetNames.Count > 1;
+            SelectedSheetName = result.SelectedSheet;
+            _suppressSheetChangeReload = false;
+
             SourceColumns.Clear();
             SourceColumns.Add("(none)");
             foreach (var c in result.Columns) SourceColumns.Add(c);
 
+            // System-suggested mapping (see ImportColumnMatcher server-side)
+            // — the whole point is the user shouldn't have to configure
+            // this by hand for an ordinary tracker export; every row stays
+            // fully editable below regardless.
             foreach (var row in MappingRows)
             {
-                // Best-effort auto-match by exact/loose name (e.g. "sale.orderId" ~ "Order ID").
-                var guess = result.Columns.FirstOrDefault(c =>
-                    string.Equals(c.Replace(" ", ""), row.Field.DisplayName.Replace(" ", ""), StringComparison.OrdinalIgnoreCase));
-                row.SelectedColumn = guess ?? "(none)";
+                row.SelectedColumn = result.SuggestedMapping.TryGetValue(row.Field.Key, out var col) ? col : "(none)";
             }
 
             HasColumns = true;
-            StatusMessage = $"Found {result.Columns.Count} column(s). Review the mapping below, then Upload.";
+            var matched = result.SuggestedMapping.Count;
+            StatusMessage = $"Sheet '{result.SelectedSheet}': found {result.Columns.Count} column(s), auto-matched {matched}. Review below, then Upload.";
         }
         catch (ServerApiException ex)
         {
@@ -122,6 +148,12 @@ public sealed partial class ImportViewModel : ViewModelBase
         {
             IsBusy = false;
         }
+    }
+
+    partial void OnSelectedSheetNameChanged(string? value)
+    {
+        if (_suppressSheetChangeReload || value is null) return;
+        _ = InspectAsync(value);
     }
 
     partial void OnSelectedTemplateChanged(ImportMappingTemplateDto? value)
@@ -177,7 +209,7 @@ public sealed partial class ImportViewModel : ViewModelBase
         try
         {
             var mapping = BuildMapping();
-            var batch = await _apiClient.UploadXlsxAsync(SelectedFilePath, mapping);
+            var batch = await _apiClient.UploadXlsxAsync(SelectedFilePath, SelectedSheetName, mapping);
             ApplyBatch(batch);
             StatusMessage = $"Staged {batch.RowCount} row(s), {batch.ValidRowCount} ready to import. Review below, then Confirm.";
         }

@@ -57,8 +57,8 @@ public interface IServerApiClient
     Task<DashboardSummaryDto> GetDashboardSummaryAsync(CancellationToken ct = default);
 
     Task<IReadOnlyList<ImportTargetFieldDto>> GetImportTargetFieldsAsync(CancellationToken ct = default);
-    Task<InspectXlsxResultDto> InspectXlsxAsync(string filePath, CancellationToken ct = default);
-    Task<ImportBatchDto> UploadXlsxAsync(string filePath, IReadOnlyDictionary<string, string> mapping, CancellationToken ct = default);
+    Task<InspectXlsxResultDto> InspectXlsxAsync(string filePath, string? sheetName = null, CancellationToken ct = default);
+    Task<ImportBatchDto> UploadXlsxAsync(string filePath, string? sheetName, IReadOnlyDictionary<string, string> mapping, CancellationToken ct = default);
     Task<ImportBatchDto> GetImportBatchAsync(Guid batchId, CancellationToken ct = default);
     Task<ConfirmImportResultDto> ConfirmImportAsync(Guid batchId, CancellationToken ct = default);
     Task<IReadOnlyList<ImportMappingTemplateDto>> ListImportMappingTemplatesAsync(string importType, CancellationToken ct = default);

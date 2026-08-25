@@ -20,6 +20,14 @@
                     IsVisible="{Binding ConfirmResultSummary, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Margin="0,0,0,8" />
 
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,12"
+                    IsVisible="{Binding HasMultipleSheets}">
+            <TextBlock Text="Sheet:" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding SheetNames}" SelectedItem="{Binding SelectedSheetName}" Width="160" />
+            <TextBlock Text="This file has multiple sheets — the best-matching one was picked automatically; switch it here if needed."
+                       FontSize="11" Foreground="Gray" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,12"
                     IsVisible="{Binding HasColumns}">
             <TextBlock Text="Template:" VerticalAlignment="Center" />
             <ComboBox ItemsSource="{Binding Templates}" SelectedItem="{Binding SelectedTemplate}" Width="160">

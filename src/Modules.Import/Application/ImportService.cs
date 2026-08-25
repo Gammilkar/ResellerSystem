@@ -29,8 +29,12 @@ public interface IImportService
 {
     IReadOnlyList<ImportTargetFieldDto> GetTargetFields();
 
-    Task<InspectXlsxResultDto> InspectXlsxAsync(Stream content, CancellationToken ct = default);
-    Task<ImportBatchDto> UploadXlsxAsync(Stream content, string filename, IReadOnlyDictionary<string, string> mapping, CancellationToken ct = default);
+    /// <param name="sheetName">Null to auto-pick the sheet whose headers
+    /// best match known target fields (see ImportColumnMatcher) — the
+    /// common case for a single-table file. Pass an explicit name (from a
+    /// previous InspectXlsxAsync's SheetNames) to override.</param>
+    Task<InspectXlsxResultDto> InspectXlsxAsync(Stream content, string? sheetName, CancellationToken ct = default);
+    Task<ImportBatchDto> UploadXlsxAsync(Stream content, string filename, string? sheetName, IReadOnlyDictionary<string, string> mapping, CancellationToken ct = default);
     Task<ImportBatchDto> UploadCsvAsync(Stream content, string filename, CancellationToken ct = default);
 
     Task<ImportBatchDto> GetBatchAsync(Guid batchId, CancellationToken ct = default);
@@ -69,26 +73,27 @@ public sealed class ImportService : IImportService
 
     public IReadOnlyList<ImportTargetFieldDto> GetTargetFields() => ImportTargetFields.All;
 
-    public Task<InspectXlsxResultDto> InspectXlsxAsync(Stream content, CancellationToken ct = default)
+    public Task<InspectXlsxResultDto> InspectXlsxAsync(Stream content, string? sheetName, CancellationToken ct = default)
     {
         using var workbook = new XLWorkbook(content);
-        var sheet = workbook.Worksheets.First();
-        var headerRow = sheet.FirstRowUsed() ?? throw new ValidationFailedException(new[] { "File is empty." });
-
-        var columns = headerRow.CellsUsed()
-            .Select(c => c.GetString().Trim())
-            .Where(s => !string.IsNullOrWhiteSpace(s))
-            .ToList();
-
-        if (columns.Count == 0)
+        if (workbook.Worksheets.Count == 0)
         {
-            throw new ValidationFailedException(new[] { "No column headers found in the first row." });
+            throw new ValidationFailedException(new[] { "Workbook has no sheets." });
         }
 
-        return Task.FromResult(new InspectXlsxResultDto { Columns = columns });
+        var sheet = SelectSheet(workbook, sheetName);
+        var columns = ReadHeaderColumns(sheet);
+
+        return Task.FromResult(new InspectXlsxResultDto
+        {
+            SheetNames = workbook.Worksheets.Select(w => w.Name).ToList(),
+            SelectedSheet = sheet.Name,
+            Columns = columns,
+            SuggestedMapping = ImportColumnMatcher.SuggestMapping(columns)
+        });
     }
 
-    public async Task<ImportBatchDto> UploadXlsxAsync(Stream content, string filename, IReadOnlyDictionary<string, string> mapping, CancellationToken ct = default)
+    public async Task<ImportBatchDto> UploadXlsxAsync(Stream content, string filename, string? sheetName, IReadOnlyDictionary<string, string> mapping, CancellationToken ct = default)
     {
         var missingRequired = RequiredFields.Where(f => !mapping.ContainsKey(f) || string.IsNullOrWhiteSpace(mapping[f])).ToList();
         if (missingRequired.Count > 0)
@@ -97,7 +102,7 @@ public sealed class ImportService : IImportService
         }
 
         using var workbook = new XLWorkbook(content);
-        var sheet = workbook.Worksheets.First();
+        var sheet = SelectSheet(workbook, sheetName);
         var headerRow = sheet.FirstRowUsed() ?? throw new ValidationFailedException(new[] { "File is empty." });
 
         var columnNames = new Dictionary<int, string>();
@@ -127,6 +132,39 @@ public sealed class ImportService : IImportService
         }
 
         return await BuildBatchAsync(filename, "xlsx-full", mapping, rawRows, ct);
+    }
+
+    private static IXLWorksheet SelectSheet(XLWorkbook workbook, string? sheetName)
+    {
+        if (!string.IsNullOrWhiteSpace(sheetName))
+        {
+            return workbook.Worksheets.FirstOrDefault(w => w.Name == sheetName)
+                ?? throw new ValidationFailedException(new[] { $"Sheet '{sheetName}' was not found in this workbook." });
+        }
+
+        // Auto-pick: the sheet whose header row best matches known target
+        // fields, tie-broken by row count — skips summary/dashboard/lookup
+        // sheets in a multi-sheet workbook in favor of the real data table.
+        return workbook.Worksheets
+            .Select(w => (Sheet: w, Columns: ReadHeaderColumns(w)))
+            .Where(x => x.Columns.Count > 0)
+            .Select(x => (x.Sheet, Score: ImportColumnMatcher.ScoreSheetHeaders(x.Columns), Rows: x.Sheet.LastRowUsed()?.RowNumber() ?? 0))
+            .OrderByDescending(x => x.Score)
+            .ThenByDescending(x => x.Rows)
+            .Select(x => x.Sheet)
+            .FirstOrDefault()
+            ?? workbook.Worksheets.First();
+    }
+
+    private static List<string> ReadHeaderColumns(IXLWorksheet sheet)
+    {
+        var headerRow = sheet.FirstRowUsed();
+        if (headerRow is null) return new List<string>();
+
+        return headerRow.CellsUsed()
+            .Select(c => c.GetString().Trim())
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .ToList();
     }
 
     /// <summary>Legacy Stage 1 shape: SourceName,ItemName,TotalAmount,PurchaseDate
@@ -250,6 +288,14 @@ public sealed class ImportService : IImportService
         return ToDto(batch);
     }
 
+    private sealed class RowCounts
+    {
+        public int Items;
+        public int Listings;
+        public int Sales;
+        public int Returns;
+    }
+
     public async Task<ConfirmImportResultDto> ConfirmAsync(Guid batchId, CancellationToken ct = default)
     {
         await using var db = _dbContextFactory.CreateForCurrentTenant();
@@ -264,7 +310,8 @@ public sealed class ImportService : IImportService
         var mapping = JsonSerializer.Deserialize<Dictionary<string, string>>(batch.ColumnMapping) ?? new();
 
         var purchaseIdByGroupKey = new Dictionary<string, Guid>();
-        int purchaseCount = 0, itemCount = 0, listingCount = 0, saleCount = 0, returnCount = 0;
+        var totals = new RowCounts();
+        var purchaseCount = 0;
 
         foreach (var row in batch.Rows.Where(r => r.IsValid && !r.PossibleDuplicate).OrderBy(r => r.RowIndex))
         {
@@ -278,10 +325,11 @@ public sealed class ImportService : IImportService
             {
                 ImportParsing.TryParseDecimal(mapped.GetOrNull("purchase.salesTaxAmount"), out var taxAmount);
                 decimal? taxRate = ImportParsing.TryParseDecimal(mapped.GetOrNull("purchase.salesTaxRate"), out var tr) ? tr : null;
+                var purchaseDate = ImportParsing.TryParseDate(mapped.GetOrNull("purchase.date"), out var pd) ? pd : DateOnly.FromDateTime(DateTime.Today);
 
                 var purchase = await _inventoryService.CreatePurchaseHeaderAsync(new CreatePurchaseHeaderRequest
                 {
-                    PurchaseDate = ImportParsing.TryParseDate(mapped.GetOrNull("purchase.date"), out var pd) ? pd : DateOnly.FromDateTime(DateTime.Today),
+                    PurchaseDate = purchaseDate,
                     SourceName = mapped.GetOrNull("purchase.sourceName")!,
                     TotalAmount = 0, // informational only for header-only purchases — real cost lives on each Item
                     SalesTaxAmount = taxAmount,
@@ -301,143 +349,33 @@ public sealed class ImportService : IImportService
                     {
                         ExpenseType = "PurchaseFee",
                         Amount = addlExpense,
-                        ExpenseDate = pd,
+                        ExpenseDate = purchaseDate,
                         PurchaseId = purchaseId
                     }, ct);
                 }
             }
 
-            // --- Item ---
-            ImportParsing.TryParseDecimal(mapped.GetOrNull("item.purchasePrice"), out var itemPrice);
-            var item = await _inventoryService.AddItemToPurchaseAsync(purchaseId, new AddItemToPurchaseRequest
+            // A row's Listing/Sale/Fees/Return only ever describe ONE
+            // physical unit's outcome — with quantity > 1 (several
+            // identical items bought together, e.g. "Кол-во"=3) we still
+            // create that many Items, but only attach the sale-side data
+            // to the first of them rather than guessing it happened N
+            // times identically.
+            var quantity = ImportParsing.TryParseDecimal(mapped.GetOrNull("item.quantity"), out var qtyDecimal) && qtyDecimal >= 1
+                ? (int)qtyDecimal
+                : 1;
+
+            for (var unit = 0; unit < quantity; unit++)
             {
-                Name = mapped.GetOrNull("item.name")!,
-                CategoryName = mapped.GetOrNull("item.category"),
-                CostBasis = itemPrice,
-                Notes = mapped.GetOrNull("item.notes")
-            }, ct);
-            itemCount++;
-
-            var updateFields = new UpdateItemRequest
-            {
-                Status = mapped.GetOrNull("item.status"),
-                CostBasisOverride = ImportParsing.TryParseDecimal(mapped.GetOrNull("item.costBasisOverride"), out var cbo) ? cbo : null
-            };
-            if (updateFields.Status is not null || updateFields.CostBasisOverride is not null)
-            {
-                await _inventoryService.UpdateItemAsync(item.Id, updateFields, ct);
-            }
-
-            // --- Listing ---
-            Guid? listingId = null;
-            var listingMarketplace = mapped.GetOrNull("listing.marketplace");
-            if (listingMarketplace is not null)
-            {
-                var listing = await _salesService.CreateListingAsync(new CreateListingRequest
-                {
-                    ItemId = item.Id,
-                    Marketplace = listingMarketplace,
-                    MarketplaceAccount = mapped.GetOrNull("listing.marketplaceAccount"),
-                    ExternalListingId = mapped.GetOrNull("listing.externalListingId"),
-                    PublishedDate = ImportParsing.TryParseDate(mapped.GetOrNull("listing.publishedDate"), out var pubDate) ? pubDate : null,
-                    ListingPrice = ImportParsing.TryParseDecimal(mapped.GetOrNull("listing.listingPrice"), out var lp) ? lp : null,
-                    Promoted = ImportParsing.ParseBool(mapped.GetOrNull("listing.promoted")),
-                    PromotedRate = ImportParsing.TryParseDecimal(mapped.GetOrNull("listing.promotedRate"), out var pr) ? pr : null,
-                    Url = mapped.GetOrNull("listing.url"),
-                    EndDate = ImportParsing.TryParseDate(mapped.GetOrNull("listing.endDate"), out var ed) ? ed : null
-                }, ct);
-                listingId = listing.Id;
-                listingCount++;
-            }
-
-            // --- Sale ---
-            Guid? saleId = null;
-            var saleMarketplace = mapped.GetOrNull("sale.marketplace") ?? listingMarketplace;
-            var saleItemPriceText = mapped.GetOrNull("sale.itemSalePrice");
-            if (saleMarketplace is not null && saleItemPriceText is not null)
-            {
-                ImportParsing.TryParseDecimal(saleItemPriceText, out var saleItemPrice);
-                ImportParsing.TryParseDecimal(mapped.GetOrNull("sale.buyerPaidShipping"), out var shipping);
-                ImportParsing.TryParseDecimal(mapped.GetOrNull("sale.buyerPaidSalesTax"), out var buyerTax);
-                ImportParsing.TryParseDecimal(mapped.GetOrNull("sale.marketplaceCollectedTax"), out var mpTax);
-                var hasPayout = ImportParsing.TryParseDecimal(mapped.GetOrNull("sale.payoutAmount"), out var payout);
-
-                var sale = await _salesService.CreateSaleAsync(new CreateSaleRequest
-                {
-                    ItemId = item.Id,
-                    ListingId = listingId,
-                    Marketplace = saleMarketplace,
-                    MarketplaceAccount = mapped.GetOrNull("sale.marketplaceAccount"),
-                    OrderId = mapped.GetOrNull("sale.orderId"),
-                    TransactionId = mapped.GetOrNull("sale.transactionId"),
-                    SaleDate = ImportParsing.TryParseDate(mapped.GetOrNull("sale.saleDate"), out var saleDate) ? saleDate : DateOnly.FromDateTime(DateTime.Today),
-                    ItemSalePrice = saleItemPrice,
-                    BuyerPaidShipping = shipping,
-                    BuyerPaidSalesTax = buyerTax,
-                    MarketplaceCollectedTax = mpTax,
-                    // Payout is a distinct real-world figure (Product Specification
-                    // section 42) — only defaulted here when the sheet genuinely
-                    // doesn't have it, so a real value is never silently overwritten.
-                    PayoutAmount = hasPayout ? payout : saleItemPrice + shipping,
-                    PaymentMethod = mapped.GetOrNull("sale.paymentMethod"),
-                    DestinationState = mapped.GetOrNull("sale.destinationState"),
-                    DestinationZip = mapped.GetOrNull("sale.destinationZip")
-                }, ct);
-                saleId = sale.Id;
-                saleCount++;
-
-                await AddFeeIfPresentAsync(sale.Id, "FinalValueFee", mapped.GetOrNull("fee.finalValueFee"), mapped.GetOrNull("fee.finalValueFeeRate"), ct);
-                await AddFeeIfPresentAsync(sale.Id, "PerOrderFee", mapped.GetOrNull("fee.perOrderFee"), null, ct);
-                await AddFeeIfPresentAsync(sale.Id, "InsertionFee", mapped.GetOrNull("fee.insertionFee"), null, ct);
-                await AddFeeIfPresentAsync(sale.Id, "ListingUpgradeFee", mapped.GetOrNull("fee.listingUpgradeFee"), null, ct);
-                await AddFeeIfPresentAsync(sale.Id, "PromotedListingsFee", mapped.GetOrNull("fee.promotedListingsFee"), null, ct);
-                await AddFeeIfPresentAsync(sale.Id, "InternationalFee", mapped.GetOrNull("fee.internationalFee"), null, ct);
-                await AddFeeIfPresentAsync(sale.Id, "TaxOnSellerFees", mapped.GetOrNull("fee.taxOnSellerFees"), null, ct);
-                await AddFeeIfPresentAsync(sale.Id, "FeeCredit", mapped.GetOrNull("fee.feeCredit"), null, ct);
-                await AddFeeIfPresentAsync(sale.Id, "DisputeFee", mapped.GetOrNull("fee.disputeFee"), null, ct);
-                await AddFeeIfPresentAsync(sale.Id, "ChargebackFee", mapped.GetOrNull("fee.chargebackFee"), null, ct);
-                await AddFeeIfPresentAsync(sale.Id, "Other", mapped.GetOrNull("fee.otherMarketplaceFees"), null, ct);
-
-                await AddExpenseIfPresentAsync("ShippingLabel", mapped.GetOrNull("expense.shippingLabel"), saleDate, saleId.Value, ct);
-                await AddExpenseIfPresentAsync("Packaging", mapped.GetOrNull("expense.packaging"), saleDate, saleId.Value, ct);
-                await AddExpenseIfPresentAsync("Insurance", mapped.GetOrNull("expense.insurance"), saleDate, saleId.Value, ct);
-                await AddExpenseIfPresentAsync("Other", mapped.GetOrNull("expense.other"), saleDate, saleId.Value, ct);
-
-                // --- Return ---
-                var returnDateText = mapped.GetOrNull("return.date");
-                var refundText = mapped.GetOrNull("return.refundAmount");
-                if (returnDateText is not null || refundText is not null)
-                {
-                    ImportParsing.TryParseDecimal(refundText, out var refund);
-                    ImportParsing.TryParseDecimal(mapped.GetOrNull("return.refundedShipping"), out var refundShip);
-                    ImportParsing.TryParseDecimal(mapped.GetOrNull("return.marketplaceFeeCredit"), out var retFeeCredit);
-                    ImportParsing.TryParseDecimal(mapped.GetOrNull("return.shippingCost"), out var retShipCost);
-
-                    await _salesService.CreateReturnAsync(new CreateReturnRequest
-                    {
-                        SaleId = saleId.Value,
-                        ItemId = item.Id,
-                        ReturnDate = ImportParsing.TryParseDate(returnDateText, out var retDate) ? retDate : saleDate,
-                        ReturnType = mapped.GetOrNull("return.type") ?? "Full",
-                        RefundToBuyer = refund,
-                        RefundedShipping = refundShip,
-                        MarketplaceFeeCredit = retFeeCredit,
-                        ReturnShippingCost = retShipCost,
-                        PhysicallyReturned = ImportParsing.ParseBool(mapped.GetOrNull("return.physicallyReturned")),
-                        ConditionOnReturn = mapped.GetOrNull("return.conditionOnReturn")
-                    }, ct);
-                    returnCount++;
-
-                    var statusAfter = mapped.GetOrNull("return.statusAfterReturn");
-                    if (statusAfter is not null)
-                    {
-                        await _inventoryService.UpdateItemAsync(item.Id, new UpdateItemRequest { Status = statusAfter }, ct);
-                    }
-                }
+                var counts = await CreateItemAndOutcomeAsync(purchaseId, mapped, attachSaleData: unit == 0 && quantity == 1, ct);
+                totals.Items += counts.Items;
+                totals.Listings += counts.Listings;
+                totals.Sales += counts.Sales;
+                totals.Returns += counts.Returns;
             }
         }
 
-        var skipped = batch.Rows.Count - itemCount;
+        var skipped = batch.Rows.Count - totals.Items;
 
         batch.Status = "Confirmed";
         batch.ConfirmedAt = DateTimeOffset.UtcNow;
@@ -445,17 +383,155 @@ public sealed class ImportService : IImportService
 
         await _auditLogger.LogAsync(new AuditEntry(
             "ImportBatch", batch.Id, "Confirmed", _currentUser.DisplayName, "import",
-            NewValue: $"{itemCount} item(s), {purchaseCount} purchase(s), {saleCount} sale(s)"), ct);
+            NewValue: $"{totals.Items} item(s), {purchaseCount} purchase(s), {totals.Sales} sale(s)"), ct);
 
         return new ConfirmImportResultDto
         {
             CreatedPurchaseCount = purchaseCount,
-            CreatedItemCount = itemCount,
-            CreatedListingCount = listingCount,
-            CreatedSaleCount = saleCount,
-            CreatedReturnCount = returnCount,
+            CreatedItemCount = totals.Items,
+            CreatedListingCount = totals.Listings,
+            CreatedSaleCount = totals.Sales,
+            CreatedReturnCount = totals.Returns,
             SkippedRowCount = skipped
         };
+    }
+
+    private async Task<RowCounts> CreateItemAndOutcomeAsync(Guid purchaseId, Dictionary<string, string> mapped, bool attachSaleData, CancellationToken ct)
+    {
+        var counts = new RowCounts();
+
+        // --- Item ---
+        ImportParsing.TryParseDecimal(mapped.GetOrNull("item.purchasePrice"), out var itemPrice);
+        var item = await _inventoryService.AddItemToPurchaseAsync(purchaseId, new AddItemToPurchaseRequest
+        {
+            Name = mapped.GetOrNull("item.name")!,
+            CategoryName = mapped.GetOrNull("item.category"),
+            CostBasis = itemPrice,
+            Notes = mapped.GetOrNull("item.notes")
+        }, ct);
+        counts.Items++;
+
+        var updateFields = new UpdateItemRequest
+        {
+            Status = mapped.GetOrNull("item.status"),
+            CostBasisOverride = ImportParsing.TryParseDecimal(mapped.GetOrNull("item.costBasisOverride"), out var cbo) ? cbo : null
+        };
+        if (updateFields.Status is not null || updateFields.CostBasisOverride is not null)
+        {
+            await _inventoryService.UpdateItemAsync(item.Id, updateFields, ct);
+        }
+
+        if (!attachSaleData) return counts;
+
+        // --- Listing ---
+        Guid? listingId = null;
+        var listingMarketplace = mapped.GetOrNull("listing.marketplace");
+        if (listingMarketplace is not null)
+        {
+            var listing = await _salesService.CreateListingAsync(new CreateListingRequest
+            {
+                ItemId = item.Id,
+                Marketplace = listingMarketplace,
+                MarketplaceAccount = mapped.GetOrNull("listing.marketplaceAccount"),
+                ExternalListingId = mapped.GetOrNull("listing.externalListingId"),
+                PublishedDate = ImportParsing.TryParseDate(mapped.GetOrNull("listing.publishedDate"), out var pubDate) ? pubDate : null,
+                ListingPrice = ImportParsing.TryParseDecimal(mapped.GetOrNull("listing.listingPrice"), out var lp) ? lp : null,
+                Promoted = ImportParsing.ParseBool(mapped.GetOrNull("listing.promoted")),
+                PromotedRate = ImportParsing.TryParseDecimal(mapped.GetOrNull("listing.promotedRate"), out var pr) ? pr : null,
+                Url = mapped.GetOrNull("listing.url"),
+                EndDate = ImportParsing.TryParseDate(mapped.GetOrNull("listing.endDate"), out var ed) ? ed : null
+            }, ct);
+            listingId = listing.Id;
+            counts.Listings++;
+        }
+
+        // --- Sale ---
+        Guid? saleId = null;
+        var saleMarketplace = mapped.GetOrNull("sale.marketplace") ?? listingMarketplace;
+        var saleItemPriceText = mapped.GetOrNull("sale.itemSalePrice");
+        if (saleMarketplace is not null && saleItemPriceText is not null)
+        {
+            ImportParsing.TryParseDecimal(saleItemPriceText, out var saleItemPrice);
+            ImportParsing.TryParseDecimal(mapped.GetOrNull("sale.buyerPaidShipping"), out var shipping);
+            ImportParsing.TryParseDecimal(mapped.GetOrNull("sale.buyerPaidSalesTax"), out var buyerTax);
+            ImportParsing.TryParseDecimal(mapped.GetOrNull("sale.marketplaceCollectedTax"), out var mpTax);
+            var hasPayout = ImportParsing.TryParseDecimal(mapped.GetOrNull("sale.payoutAmount"), out var payout);
+
+            var sale = await _salesService.CreateSaleAsync(new CreateSaleRequest
+            {
+                ItemId = item.Id,
+                ListingId = listingId,
+                Marketplace = saleMarketplace,
+                MarketplaceAccount = mapped.GetOrNull("sale.marketplaceAccount"),
+                OrderId = mapped.GetOrNull("sale.orderId"),
+                TransactionId = mapped.GetOrNull("sale.transactionId"),
+                SaleDate = ImportParsing.TryParseDate(mapped.GetOrNull("sale.saleDate"), out var saleDate) ? saleDate : DateOnly.FromDateTime(DateTime.Today),
+                ItemSalePrice = saleItemPrice,
+                BuyerPaidShipping = shipping,
+                BuyerPaidSalesTax = buyerTax,
+                MarketplaceCollectedTax = mpTax,
+                // Payout is a distinct real-world figure (Product Specification
+                // section 42) — only defaulted here when the sheet genuinely
+                // doesn't have it, so a real value is never silently overwritten.
+                PayoutAmount = hasPayout ? payout : saleItemPrice + shipping,
+                PaymentMethod = mapped.GetOrNull("sale.paymentMethod"),
+                DestinationState = mapped.GetOrNull("sale.destinationState"),
+                DestinationZip = mapped.GetOrNull("sale.destinationZip")
+            }, ct);
+            saleId = sale.Id;
+            counts.Sales++;
+
+            await AddFeeIfPresentAsync(sale.Id, "FinalValueFee", mapped.GetOrNull("fee.finalValueFee"), mapped.GetOrNull("fee.finalValueFeeRate"), ct);
+            await AddFeeIfPresentAsync(sale.Id, "PerOrderFee", mapped.GetOrNull("fee.perOrderFee"), null, ct);
+            await AddFeeIfPresentAsync(sale.Id, "InsertionFee", mapped.GetOrNull("fee.insertionFee"), null, ct);
+            await AddFeeIfPresentAsync(sale.Id, "ListingUpgradeFee", mapped.GetOrNull("fee.listingUpgradeFee"), null, ct);
+            await AddFeeIfPresentAsync(sale.Id, "PromotedListingsFee", mapped.GetOrNull("fee.promotedListingsFee"), null, ct);
+            await AddFeeIfPresentAsync(sale.Id, "InternationalFee", mapped.GetOrNull("fee.internationalFee"), null, ct);
+            await AddFeeIfPresentAsync(sale.Id, "TaxOnSellerFees", mapped.GetOrNull("fee.taxOnSellerFees"), null, ct);
+            await AddFeeIfPresentAsync(sale.Id, "FeeCredit", mapped.GetOrNull("fee.feeCredit"), null, ct);
+            await AddFeeIfPresentAsync(sale.Id, "DisputeFee", mapped.GetOrNull("fee.disputeFee"), null, ct);
+            await AddFeeIfPresentAsync(sale.Id, "ChargebackFee", mapped.GetOrNull("fee.chargebackFee"), null, ct);
+            await AddFeeIfPresentAsync(sale.Id, "Other", mapped.GetOrNull("fee.otherMarketplaceFees"), null, ct);
+
+            await AddExpenseIfPresentAsync("ShippingLabel", mapped.GetOrNull("expense.shippingLabel"), saleDate, saleId.Value, ct);
+            await AddExpenseIfPresentAsync("Packaging", mapped.GetOrNull("expense.packaging"), saleDate, saleId.Value, ct);
+            await AddExpenseIfPresentAsync("Insurance", mapped.GetOrNull("expense.insurance"), saleDate, saleId.Value, ct);
+            await AddExpenseIfPresentAsync("Other", mapped.GetOrNull("expense.other"), saleDate, saleId.Value, ct);
+
+            // --- Return ---
+            var returnDateText = mapped.GetOrNull("return.date");
+            var refundText = mapped.GetOrNull("return.refundAmount");
+            if (returnDateText is not null || refundText is not null)
+            {
+                ImportParsing.TryParseDecimal(refundText, out var refund);
+                ImportParsing.TryParseDecimal(mapped.GetOrNull("return.refundedShipping"), out var refundShip);
+                ImportParsing.TryParseDecimal(mapped.GetOrNull("return.marketplaceFeeCredit"), out var retFeeCredit);
+                ImportParsing.TryParseDecimal(mapped.GetOrNull("return.shippingCost"), out var retShipCost);
+
+                await _salesService.CreateReturnAsync(new CreateReturnRequest
+                {
+                    SaleId = saleId.Value,
+                    ItemId = item.Id,
+                    ReturnDate = ImportParsing.TryParseDate(returnDateText, out var retDate) ? retDate : saleDate,
+                    ReturnType = mapped.GetOrNull("return.type") ?? "Full",
+                    RefundToBuyer = refund,
+                    RefundedShipping = refundShip,
+                    MarketplaceFeeCredit = retFeeCredit,
+                    ReturnShippingCost = retShipCost,
+                    PhysicallyReturned = ImportParsing.ParseBool(mapped.GetOrNull("return.physicallyReturned")),
+                    ConditionOnReturn = mapped.GetOrNull("return.conditionOnReturn")
+                }, ct);
+                counts.Returns++;
+
+                var statusAfter = mapped.GetOrNull("return.statusAfterReturn");
+                if (statusAfter is not null)
+                {
+                    await _inventoryService.UpdateItemAsync(item.Id, new UpdateItemRequest { Status = statusAfter }, ct);
+                }
+            }
+        }
+
+        return counts;
     }
 
     private async Task AddFeeIfPresentAsync(Guid saleId, string feeType, string? amountText, string? rateText, CancellationToken ct)
