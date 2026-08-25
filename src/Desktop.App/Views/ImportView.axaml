@@ -5,12 +5,13 @@
              x:Class="ResellerSystem.Desktop.App.Views.ImportView"
              x:DataType="vm:ImportViewModel">
     <DockPanel>
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
-            <TextBlock Text="Import from Excel" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" />
-            <Button Content="Choose File..." Command="{Binding ChooseFileCommand}" IsEnabled="{Binding !IsBusy}" />
-            <TextBlock Text="{Binding SelectedFilePath}" VerticalAlignment="Center" Foreground="Gray" />
-            <Button Content="Back" Command="{Binding BackCommand}" />
-        </StackPanel>
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,*" Margin="0,0,0,12">
+            <TextBlock Grid.Column="0" Text="Import from Excel" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <Button Grid.Column="1" Content="Back" Command="{Binding BackCommand}" Margin="0,0,8,0" />
+            <Button Grid.Column="2" Content="Choose File..." Command="{Binding ChooseFileCommand}" IsEnabled="{Binding !IsBusy}" Margin="0,0,8,0" />
+            <TextBlock Grid.Column="3" Text="{Binding SelectedFilePath}" VerticalAlignment="Center" Foreground="Gray"
+                       TextTrimming="CharacterEllipsis" />
+        </Grid>
 
         <TextBlock DockPanel.Dock="Top" Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap"
                     IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Margin="0,0,0,8" />
