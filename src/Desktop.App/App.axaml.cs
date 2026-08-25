@@ -25,7 +25,15 @@ public sealed class App : Application
         var services = new ServiceCollection();
 
         services.AddSingleton<ClientSessionState>();
-        services.AddHttpClient<IServerApiClient, ServerApiClient>();
+
+        // A single shared IServerApiClient instance for the app's lifetime:
+        // AddHttpClient<TClient>() registers TClient as transient, which
+        // would hand each screen's ViewModel a fresh, unconfigured
+        // HttpClient (BaseAddress unset) after ServerConnectionViewModel
+        // already called Configure() on a different instance.
+        services.AddHttpClient();
+        services.AddSingleton<IServerApiClient>(sp =>
+            new ServerApiClient(sp.GetRequiredService<IHttpClientFactory>().CreateClient(nameof(ServerApiClient))));
 
         services.AddSingleton<MainWindowViewModel>();
         services.AddTransient<ServerConnectionViewModel>();
