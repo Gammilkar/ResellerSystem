@@ -16,18 +16,32 @@ namespace ResellerSystem.Desktop.ViewModels;
 /// IServerApiClient.ListInventoryTableAsync (server-side:
 /// InventoryTableReader). The X-Database-Id header is attached by
 /// NavigationService.ShowInventory before this loads.
+///
+/// Display settings (font size, row height, which columns show) persist
+/// locally via ITableSettingsStore — Avalonia's DataGrid, like WPF's,
+/// only supports one uniform RowHeight for the whole grid (no per-row
+/// drag-resize the way Excel has); that's the closest equivalent the
+/// stock control offers.
 /// </summary>
 public sealed partial class InventoryViewModel : ViewModelBase
 {
+    private const string TableKey = "inventory";
+    private const double DefaultFontSize = 13;
+    private const double DefaultRowHeight = 32;
+
     private readonly IServerApiClient _apiClient;
     private readonly ClientSessionState _session;
+    private readonly ITableSettingsStore _settingsStore;
     private readonly INavigationService _navigation;
 
-    public InventoryViewModel(IServerApiClient apiClient, ClientSessionState session, INavigationService navigation)
+    public InventoryViewModel(IServerApiClient apiClient, ClientSessionState session, ITableSettingsStore settingsStore, INavigationService navigation)
     {
         _apiClient = apiClient;
         _session = session;
+        _settingsStore = settingsStore;
         _navigation = navigation;
+
+        LoadColumnSettings();
     }
 
     public ObservableCollection<InventoryTableRowDto> TableRows { get; } = new();
@@ -42,6 +56,31 @@ public sealed partial class InventoryViewModel : ViewModelBase
     [ObservableProperty] private string _newQuantity = "1";
     [ObservableProperty] private bool _isSavingPurchase;
     [ObservableProperty] private bool _showNewPurchaseForm;
+
+    // Display settings
+    [ObservableProperty] private bool _showSettingsPanel;
+    [ObservableProperty] private double _dataFontSize = DefaultFontSize;
+    [ObservableProperty] private double _rowHeight = DefaultRowHeight;
+
+    public double HeaderFontSize => DataFontSize + 1;
+    partial void OnDataFontSizeChanged(double value) => OnPropertyChanged(nameof(HeaderFontSize));
+
+    // Column visibility — includes columns hidden by default (ItemNumber)
+    // so "add other column types" has somewhere real to come from, not
+    // just show/hide of the original 12.
+    [ObservableProperty] private bool _showItemNumberColumn;
+    [ObservableProperty] private bool _showNameColumn = true;
+    [ObservableProperty] private bool _showStatusColumn = true;
+    [ObservableProperty] private bool _showPurchaseDateColumn = true;
+    [ObservableProperty] private bool _showPurchaseSourceColumn = true;
+    [ObservableProperty] private bool _showPurchaseTypeColumn = true;
+    [ObservableProperty] private bool _showCostBasisColumn = true;
+    [ObservableProperty] private bool _showListingDateColumn = true;
+    [ObservableProperty] private bool _showMarketplaceColumn = true;
+    [ObservableProperty] private bool _showSaleDateColumn = true;
+    [ObservableProperty] private bool _showSaleMarketplaceColumn = true;
+    [ObservableProperty] private bool _showSalePriceColumn = true;
+    [ObservableProperty] private bool _showDaysListedColumn = true;
 
     [RelayCommand]
     private async Task LoadAsync()
@@ -66,6 +105,58 @@ public sealed partial class InventoryViewModel : ViewModelBase
 
     [RelayCommand]
     private void ToggleNewPurchaseForm() => ShowNewPurchaseForm = !ShowNewPurchaseForm;
+
+    [RelayCommand]
+    private void ToggleSettingsPanel()
+    {
+        if (ShowSettingsPanel) SaveColumnSettings(); // closing the panel commits the choices
+        ShowSettingsPanel = !ShowSettingsPanel;
+    }
+
+    private void LoadColumnSettings()
+    {
+        var saved = _settingsStore.Load(TableKey);
+        if (saved is null) return;
+
+        DataFontSize = saved.FontSize;
+        RowHeight = saved.RowHeight;
+
+        bool Get(string key, bool fallback) => saved.ColumnVisibility.TryGetValue(key, out var v) ? v : fallback;
+        ShowItemNumberColumn = Get(nameof(ShowItemNumberColumn), ShowItemNumberColumn);
+        ShowNameColumn = Get(nameof(ShowNameColumn), ShowNameColumn);
+        ShowStatusColumn = Get(nameof(ShowStatusColumn), ShowStatusColumn);
+        ShowPurchaseDateColumn = Get(nameof(ShowPurchaseDateColumn), ShowPurchaseDateColumn);
+        ShowPurchaseSourceColumn = Get(nameof(ShowPurchaseSourceColumn), ShowPurchaseSourceColumn);
+        ShowPurchaseTypeColumn = Get(nameof(ShowPurchaseTypeColumn), ShowPurchaseTypeColumn);
+        ShowCostBasisColumn = Get(nameof(ShowCostBasisColumn), ShowCostBasisColumn);
+        ShowListingDateColumn = Get(nameof(ShowListingDateColumn), ShowListingDateColumn);
+        ShowMarketplaceColumn = Get(nameof(ShowMarketplaceColumn), ShowMarketplaceColumn);
+        ShowSaleDateColumn = Get(nameof(ShowSaleDateColumn), ShowSaleDateColumn);
+        ShowSaleMarketplaceColumn = Get(nameof(ShowSaleMarketplaceColumn), ShowSaleMarketplaceColumn);
+        ShowSalePriceColumn = Get(nameof(ShowSalePriceColumn), ShowSalePriceColumn);
+        ShowDaysListedColumn = Get(nameof(ShowDaysListedColumn), ShowDaysListedColumn);
+    }
+
+    private void SaveColumnSettings()
+    {
+        var visibility = new Dictionary<string, bool>
+        {
+            [nameof(ShowItemNumberColumn)] = ShowItemNumberColumn,
+            [nameof(ShowNameColumn)] = ShowNameColumn,
+            [nameof(ShowStatusColumn)] = ShowStatusColumn,
+            [nameof(ShowPurchaseDateColumn)] = ShowPurchaseDateColumn,
+            [nameof(ShowPurchaseSourceColumn)] = ShowPurchaseSourceColumn,
+            [nameof(ShowPurchaseTypeColumn)] = ShowPurchaseTypeColumn,
+            [nameof(ShowCostBasisColumn)] = ShowCostBasisColumn,
+            [nameof(ShowListingDateColumn)] = ShowListingDateColumn,
+            [nameof(ShowMarketplaceColumn)] = ShowMarketplaceColumn,
+            [nameof(ShowSaleDateColumn)] = ShowSaleDateColumn,
+            [nameof(ShowSaleMarketplaceColumn)] = ShowSaleMarketplaceColumn,
+            [nameof(ShowSalePriceColumn)] = ShowSalePriceColumn,
+            [nameof(ShowDaysListedColumn)] = ShowDaysListedColumn
+        };
+        _settingsStore.Save(TableKey, new TableSettings(DataFontSize, RowHeight, visibility));
+    }
 
     [RelayCommand]
     private async Task CreatePurchaseAsync()

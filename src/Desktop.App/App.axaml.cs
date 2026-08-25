@@ -27,6 +27,7 @@ public sealed class App : Application
         services.AddSingleton<ClientSessionState>();
         services.AddSingleton<ITrustedDeviceStore, TrustedDeviceStore>();
         services.AddSingleton<IFilePickerService, FilePickerService>();
+        services.AddSingleton<ITableSettingsStore, TableSettingsStore>();
 
         // A single shared IServerApiClient instance for the app's lifetime:
         // AddHttpClient<TClient>() registers TClient as transient, which

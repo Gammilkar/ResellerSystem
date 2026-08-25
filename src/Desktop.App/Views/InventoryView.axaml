@@ -5,11 +5,12 @@
              x:Class="ResellerSystem.Desktop.App.Views.InventoryView"
              x:DataType="vm:InventoryViewModel">
     <DockPanel>
-        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,Auto,*" Margin="0,0,0,12">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*" Margin="0,0,0,12">
             <TextBlock Grid.Column="0" Text="Inventory" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,0" />
             <Button Grid.Column="1" Content="Back" Command="{Binding BackCommand}" Margin="0,0,8,0" />
             <Button Grid.Column="2" Content="Refresh" Command="{Binding LoadCommand}" Margin="0,0,8,0" />
-            <Button Grid.Column="3" Content="New Purchase" Command="{Binding ToggleNewPurchaseFormCommand}" />
+            <Button Grid.Column="3" Content="New Purchase" Command="{Binding ToggleNewPurchaseFormCommand}" Margin="0,0,8,0" />
+            <Button Grid.Column="4" Content="Table Settings" Command="{Binding ToggleSettingsPanelCommand}" />
         </Grid>
 
         <TextBlock DockPanel.Dock="Top" Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap"
@@ -43,26 +44,88 @@
             </StackPanel>
         </Border>
 
+        <Border DockPanel.Dock="Top" BorderBrush="Gray" BorderThickness="1" Padding="12" Margin="0,0,0,16"
+                IsVisible="{Binding ShowSettingsPanel}">
+            <StackPanel Spacing="10">
+                <TextBlock Text="Table Settings" FontWeight="Bold" />
+
+                <StackPanel Orientation="Horizontal" Spacing="24">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Text size" FontSize="11" />
+                        <NumericUpDown Value="{Binding DataFontSize}" Minimum="9" Maximum="24" Increment="1" Width="120" />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Row height" FontSize="11" />
+                        <NumericUpDown Value="{Binding RowHeight}" Minimum="20" Maximum="80" Increment="2" Width="120" />
+                        <TextBlock Text="Applies to every row (Avalonia's grid, like Excel's 'Row Height...' command, sets one height for all rows — not a per-row drag)."
+                                   FontSize="10" Foreground="Gray" TextWrapping="Wrap" MaxWidth="220" />
+                    </StackPanel>
+                </StackPanel>
+
+                <TextBlock Text="Columns" FontSize="11" />
+                <WrapPanel>
+                    <CheckBox Content="№ товара" IsChecked="{Binding ShowItemNumberColumn}" Margin="0,0,16,4" />
+                    <CheckBox Content="Наименование" IsChecked="{Binding ShowNameColumn}" Margin="0,0,16,4" />
+                    <CheckBox Content="Статус" IsChecked="{Binding ShowStatusColumn}" Margin="0,0,16,4" />
+                    <CheckBox Content="Дата покупки" IsChecked="{Binding ShowPurchaseDateColumn}" Margin="0,0,16,4" />
+                    <CheckBox Content="Место покупки" IsChecked="{Binding ShowPurchaseSourceColumn}" Margin="0,0,16,4" />
+                    <CheckBox Content="Тип закупки" IsChecked="{Binding ShowPurchaseTypeColumn}" Margin="0,0,16,4" />
+                    <CheckBox Content="Итоговая себестоимость" IsChecked="{Binding ShowCostBasisColumn}" Margin="0,0,16,4" />
+                    <CheckBox Content="Дата публикации" IsChecked="{Binding ShowListingDateColumn}" Margin="0,0,16,4" />
+                    <CheckBox Content="Marketplace" IsChecked="{Binding ShowMarketplaceColumn}" Margin="0,0,16,4" />
+                    <CheckBox Content="Дата продажи" IsChecked="{Binding ShowSaleDateColumn}" Margin="0,0,16,4" />
+                    <CheckBox Content="Место продажи" IsChecked="{Binding ShowSaleMarketplaceColumn}" Margin="0,0,16,4" />
+                    <CheckBox Content="Цена продажи" IsChecked="{Binding ShowSalePriceColumn}" Margin="0,0,16,4" />
+                    <CheckBox Content="Дней в продаже" IsChecked="{Binding ShowDaysListedColumn}" Margin="0,0,16,4" />
+                </WrapPanel>
+
+                <Button Content="Done" Command="{Binding ToggleSettingsPanelCommand}" HorizontalAlignment="Left" />
+            </StackPanel>
+        </Border>
+
         <DataGrid ItemsSource="{Binding TableRows}"
                   AutoGenerateColumns="False"
                   CanUserResizeColumns="True"
                   CanUserReorderColumns="True"
                   CanUserSortColumns="True"
                   IsReadOnly="True"
-                  GridLinesVisibility="All">
+                  GridLinesVisibility="All"
+                  FontSize="{Binding DataFontSize}"
+                  RowHeight="{Binding RowHeight}">
+            <DataGrid.Styles>
+                <Style Selector="DataGridColumnHeader">
+                    <Setter Property="FontWeight" Value="Bold" />
+                    <Setter Property="Foreground" Value="Black" />
+                    <Setter Property="FontSize" Value="{Binding HeaderFontSize}" />
+                </Style>
+            </DataGrid.Styles>
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Наименование" Binding="{Binding Name}" Width="220" />
-                <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="110" />
-                <DataGridTextColumn Header="Дата покупки" Binding="{Binding PurchaseDate}" Width="110" />
-                <DataGridTextColumn Header="Место покупки" Binding="{Binding PurchaseSourceName}" Width="150" />
-                <DataGridTextColumn Header="Тип закупки" Binding="{Binding PurchaseType}" Width="120" />
-                <DataGridTextColumn Header="Итоговая себестоимость" Binding="{Binding CostBasis, StringFormat={}{0:C}}" Width="150" />
-                <DataGridTextColumn Header="Дата публикации" Binding="{Binding ListingPublishedDate}" Width="130" />
-                <DataGridTextColumn Header="Marketplace" Binding="{Binding ListingMarketplace}" Width="120" />
-                <DataGridTextColumn Header="Дата продажи" Binding="{Binding SaleDate}" Width="110" />
-                <DataGridTextColumn Header="Место продажи" Binding="{Binding SaleMarketplace}" Width="130" />
-                <DataGridTextColumn Header="Цена продажи" Binding="{Binding SalePrice, StringFormat={}{0:C}}" Width="120" />
-                <DataGridTextColumn Header="Дней в продаже" Binding="{Binding DaysListed}" Width="120" />
+                <DataGridTextColumn Header="№ товара" Binding="{Binding ItemNumber}" Width="90"
+                                    IsVisible="{Binding ShowItemNumberColumn}" />
+                <DataGridTextColumn Header="Наименование" Binding="{Binding Name}" Width="220"
+                                    IsVisible="{Binding ShowNameColumn}" />
+                <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="110"
+                                    IsVisible="{Binding ShowStatusColumn}" />
+                <DataGridTextColumn Header="Дата покупки" Binding="{Binding PurchaseDate}" Width="110"
+                                    IsVisible="{Binding ShowPurchaseDateColumn}" />
+                <DataGridTextColumn Header="Место покупки" Binding="{Binding PurchaseSourceName}" Width="150"
+                                    IsVisible="{Binding ShowPurchaseSourceColumn}" />
+                <DataGridTextColumn Header="Тип закупки" Binding="{Binding PurchaseType}" Width="120"
+                                    IsVisible="{Binding ShowPurchaseTypeColumn}" />
+                <DataGridTextColumn Header="Итоговая себестоимость" Binding="{Binding CostBasis, StringFormat={}{0:C}}" Width="150"
+                                    IsVisible="{Binding ShowCostBasisColumn}" />
+                <DataGridTextColumn Header="Дата публикации" Binding="{Binding ListingPublishedDate}" Width="130"
+                                    IsVisible="{Binding ShowListingDateColumn}" />
+                <DataGridTextColumn Header="Marketplace" Binding="{Binding ListingMarketplace}" Width="120"
+                                    IsVisible="{Binding ShowMarketplaceColumn}" />
+                <DataGridTextColumn Header="Дата продажи" Binding="{Binding SaleDate}" Width="110"
+                                    IsVisible="{Binding ShowSaleDateColumn}" />
+                <DataGridTextColumn Header="Место продажи" Binding="{Binding SaleMarketplace}" Width="130"
+                                    IsVisible="{Binding ShowSaleMarketplaceColumn}" />
+                <DataGridTextColumn Header="Цена продажи" Binding="{Binding SalePrice, StringFormat={}{0:C}}" Width="120"
+                                    IsVisible="{Binding ShowSalePriceColumn}" />
+                <DataGridTextColumn Header="Дней в продаже" Binding="{Binding DaysListed}" Width="120"
+                                    IsVisible="{Binding ShowDaysListedColumn}" />
             </DataGrid.Columns>
         </DataGrid>
     </DockPanel>
