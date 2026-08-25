@@ -9,11 +9,13 @@ using ResellerSystem.Domain.Shared.Dto;
 namespace ResellerSystem.Desktop.ViewModels;
 
 /// <summary>
-/// First business-module screen — proves the whole chain end-to-end:
-/// Desktop.App -> Server API (/api/v1/inventory/...) -> Modules.Inventory
-/// -> tenant database, with the selected DatabaseProfileDto's Id sent as
-/// X-Database-Id on every request (see ServerApiClient.SetDatabaseId,
-/// called from ShowInventory in NavigationService).
+/// The main Inventory screen — Product Specification section 34: one
+/// Excel-like grid (Table, bound in InventoryView.axaml to a DataGrid with
+/// user-resizable/reorderable columns), one row per Item with its
+/// Purchase/Listing/Sale data flattened in via
+/// IServerApiClient.ListInventoryTableAsync (server-side:
+/// InventoryTableReader). The X-Database-Id header is attached by
+/// NavigationService.ShowInventory before this loads.
 /// </summary>
 public sealed partial class InventoryViewModel : ViewModelBase
 {
@@ -28,8 +30,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
         _navigation = navigation;
     }
 
-    public ObservableCollection<PurchaseDto> Purchases { get; } = new();
-    public ObservableCollection<ItemDto> Items { get; } = new();
+    public ObservableCollection<InventoryTableRowDto> TableRows { get; } = new();
 
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private string? _errorMessage;
@@ -40,6 +41,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
     [ObservableProperty] private string _newItemName = string.Empty;
     [ObservableProperty] private string _newQuantity = "1";
     [ObservableProperty] private bool _isSavingPurchase;
+    [ObservableProperty] private bool _showNewPurchaseForm;
 
     [RelayCommand]
     private async Task LoadAsync()
@@ -48,13 +50,9 @@ public sealed partial class InventoryViewModel : ViewModelBase
         IsLoading = true;
         try
         {
-            var purchases = await _apiClient.ListPurchasesAsync();
-            Purchases.Clear();
-            foreach (var p in purchases) Purchases.Add(p);
-
-            var items = await _apiClient.ListItemsAsync(status: null);
-            Items.Clear();
-            foreach (var i in items) Items.Add(i);
+            var rows = await _apiClient.ListInventoryTableAsync();
+            TableRows.Clear();
+            foreach (var r in rows) TableRows.Add(r);
         }
         catch (ServerApiException ex)
         {
@@ -65,6 +63,9 @@ public sealed partial class InventoryViewModel : ViewModelBase
             IsLoading = false;
         }
     }
+
+    [RelayCommand]
+    private void ToggleNewPurchaseForm() => ShowNewPurchaseForm = !ShowNewPurchaseForm;
 
     [RelayCommand]
     private async Task CreatePurchaseAsync()
@@ -103,6 +104,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
             NewTotalAmount = "0.00";
             NewItemName = string.Empty;
             NewQuantity = "1";
+            ShowNewPurchaseForm = false;
 
             await LoadAsync();
         }

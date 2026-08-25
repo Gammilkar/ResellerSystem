@@ -27,6 +27,7 @@ public sealed class InventoryModule : IResellerModule
     {
         services.AddScoped<IInventoryDbContextFactory, InventoryDbContextFactory>();
         services.AddScoped<IInventoryService, InventoryService>();
+        services.AddScoped<IInventoryTableReader, InventoryTableReader>();
 
         // Controllers in this assembly (Api/InventoryControllers.cs) are
         // discovered by ASP.NET Core's default MVC assembly scan only if

@@ -45,15 +45,24 @@ public sealed class PurchasesController : ControllerBase
 public sealed class ItemsController : ControllerBase
 {
     private readonly IInventoryService _service;
+    private readonly IInventoryTableReader _tableReader;
 
-    public ItemsController(IInventoryService service)
+    public ItemsController(IInventoryService service, IInventoryTableReader tableReader)
     {
         _service = service;
+        _tableReader = tableReader;
     }
 
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ItemDto>>> List([FromQuery] string? status, CancellationToken ct) =>
         Ok(await _service.ListItemsAsync(status, ct));
+
+    /// <summary>Product Specification section 34 — the main Excel-like
+    /// Inventory grid: one row per Item with Purchase/Listing/Sale data
+    /// flattened in.</summary>
+    [HttpGet("table")]
+    public async Task<ActionResult<IReadOnlyList<InventoryTableRowDto>>> Table(CancellationToken ct) =>
+        Ok(await _tableReader.GetTableAsync(ct));
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<ItemDto>> Get(Guid id, CancellationToken ct) =>

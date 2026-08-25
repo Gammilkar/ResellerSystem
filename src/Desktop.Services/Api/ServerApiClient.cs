@@ -126,6 +126,9 @@ public sealed class ServerApiClient : IServerApiClient
     public Task<ItemDto> UpdateItemAsync(Guid id, UpdateItemRequest request, CancellationToken ct = default) =>
         SendAsync<ItemDto>(HttpMethod.Patch, $"/api/v1/inventory/items/{id}", request, ct);
 
+    public Task<IReadOnlyList<InventoryTableRowDto>> ListInventoryTableAsync(CancellationToken ct = default) =>
+        SendAsync<IReadOnlyList<InventoryTableRowDto>>(HttpMethod.Get, "/api/v1/inventory/items/table", null, ct);
+
     public Task<DashboardSummaryDto> GetDashboardSummaryAsync(CancellationToken ct = default) =>
         SendAsync<DashboardSummaryDto>(HttpMethod.Get, "/api/v1/dashboard/summary", null, ct);
 

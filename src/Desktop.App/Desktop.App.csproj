@@ -14,6 +14,9 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.3" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.1.3" />
     <PackageReference Include="Avalonia.Diagnostics" Version="11.1.3" Condition="'$(Configuration)' == 'Debug'" />
+    <!-- Real Excel-like grid (drag-to-resize/reorder columns) — Product
+         Specification section 35, needed for the Inventory table. -->
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.1.3" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
     <!-- Used transitively via Desktop.Services' TrustedDeviceStore (DPAPI).
