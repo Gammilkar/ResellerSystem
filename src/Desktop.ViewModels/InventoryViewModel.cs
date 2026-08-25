@@ -129,9 +129,15 @@ public sealed partial class InventoryViewModel : ViewModelBase
     [RelayCommand]
     private void ToggleSettingsPanel()
     {
-        if (ShowSettingsPanel) SaveColumnSettings(); // closing the panel commits the choices
+        if (ShowSettingsPanel) PersistSettings(); // closing the panel commits the choices
         ShowSettingsPanel = !ShowSettingsPanel;
     }
+
+    /// <summary>Called by MainWindow on window Closing, in addition to the
+    /// Back button and settings-panel close, so dragged row heights and
+    /// other table settings survive quitting the app without navigating
+    /// away from Inventory first.</summary>
+    public void PersistSettings() => SaveColumnSettings();
 
     private void LoadColumnSettings()
     {
@@ -236,7 +242,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
     [RelayCommand]
     private void Back()
     {
-        SaveColumnSettings(); // so per-row height edits aren't lost even if the settings panel was never opened
+        PersistSettings(); // so per-row height edits aren't lost even if the settings panel was never opened
         _navigation.ShowDashboard();
     }
 }

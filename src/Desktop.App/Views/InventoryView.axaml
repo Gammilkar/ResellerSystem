@@ -116,9 +116,8 @@
                         <DataTemplate x:DataType="vm:InventoryRowViewModel">
                             <Border Background="#10000000" Cursor="SizeNorthSouth"
                                     ToolTip.Tip="Потяните вверх/вниз, чтобы изменить высоту строки"
-                                    PointerPressed="RowHeightGrip_PointerPressed"
-                                    PointerMoved="RowHeightGrip_PointerMoved"
-                                    PointerReleased="RowHeightGrip_PointerReleased">
+                                    AttachedToVisualTree="RowHeightGrip_AttachedToVisualTree"
+                                    DetachedFromVisualTree="RowHeightGrip_DetachedFromVisualTree">
                                 <TextBlock Text="⇕" FontSize="11" Foreground="Gray"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
