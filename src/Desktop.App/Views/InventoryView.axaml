@@ -55,15 +55,19 @@
                         <NumericUpDown Value="{Binding DataFontSize}" Minimum="9" Maximum="24" Increment="1" Width="120" />
                     </StackPanel>
                     <StackPanel Spacing="4">
-                        <TextBlock Text="Row height" FontSize="11" />
-                        <NumericUpDown Value="{Binding RowHeight}" Minimum="20" Maximum="80" Increment="2" Width="120" />
-                        <TextBlock Text="Applies to every row (Avalonia's grid, like Excel's 'Row Height...' command, sets one height for all rows — not a per-row drag)."
-                                   FontSize="10" Foreground="Gray" TextWrapping="Wrap" MaxWidth="220" />
+                        <TextBlock Text="Default row height" FontSize="11" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <NumericUpDown Value="{Binding RowHeight}" Minimum="20" Maximum="120" Increment="2" Width="120" />
+                            <Button Content="Apply to All Rows" Command="{Binding ApplyRowHeightToAllCommand}" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock Text="Each row can also be resized individually via the 'Высота строки' column below."
+                                   FontSize="10" Foreground="Gray" TextWrapping="Wrap" MaxWidth="320" />
                     </StackPanel>
                 </StackPanel>
 
                 <TextBlock Text="Columns" FontSize="11" />
                 <WrapPanel>
+                    <CheckBox Content="Высота строки" IsChecked="{Binding ShowRowHeightColumn}" Margin="0,0,16,4" />
                     <CheckBox Content="№ товара" IsChecked="{Binding ShowItemNumberColumn}" Margin="0,0,16,4" />
                     <CheckBox Content="Наименование" IsChecked="{Binding ShowNameColumn}" Margin="0,0,16,4" />
                     <CheckBox Content="Статус" IsChecked="{Binding ShowStatusColumn}" Margin="0,0,16,4" />
@@ -90,16 +94,31 @@
                   CanUserSortColumns="True"
                   IsReadOnly="True"
                   GridLinesVisibility="All"
-                  FontSize="{Binding DataFontSize}"
-                  RowHeight="{Binding RowHeight}">
+                  FontSize="{Binding DataFontSize}">
             <DataGrid.Styles>
                 <Style Selector="DataGridColumnHeader">
                     <Setter Property="FontWeight" Value="Bold" />
                     <Setter Property="Foreground" Value="Black" />
                     <Setter Property="FontSize" Value="{Binding HeaderFontSize}" />
                 </Style>
+                <!-- Avalonia's DataGrid has no drag handle to resize one
+                     row (only columns) — this is the real per-row
+                     mechanism: each row's own Height, editable via the
+                     "Высота строки" column below, same as any other cell. -->
+                <Style Selector="DataGridRow">
+                    <Setter Property="Height" Value="{Binding RowHeight}" />
+                </Style>
             </DataGrid.Styles>
             <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Высота строки" Width="120"
+                                        IsVisible="{Binding ShowRowHeightColumn}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="vm:InventoryRowViewModel">
+                            <NumericUpDown Value="{Binding RowHeight}" Minimum="16" Maximum="200" Increment="2"
+                                           FormatString="0" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTextColumn Header="№ товара" Binding="{Binding ItemNumber}" Width="90"
                                     IsVisible="{Binding ShowItemNumberColumn}" />
                 <DataGridTextColumn Header="Наименование" Binding="{Binding Name}" Width="220"

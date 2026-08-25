@@ -2,7 +2,11 @@ using System.Text.Json;
 
 namespace ResellerSystem.Desktop.Services;
 
-public sealed record TableSettings(double FontSize, double RowHeight, Dictionary<string, bool> ColumnVisibility);
+public sealed record TableSettings(
+    double FontSize,
+    double RowHeight,
+    Dictionary<string, bool> ColumnVisibility,
+    Dictionary<Guid, double>? RowHeightOverrides = null);
 
 /// <summary>Per-grid display preferences (font size, row height, which
 /// columns are shown) — local to this machine/user, not synced to the
