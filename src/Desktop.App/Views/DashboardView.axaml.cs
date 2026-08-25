@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace ResellerSystem.Desktop.App.Views;
 
-public partial class SelectedDatabaseView : UserControl
+public partial class DashboardView : UserControl
 {
-    public SelectedDatabaseView()
+    public DashboardView()
     {
         InitializeComponent();
     }

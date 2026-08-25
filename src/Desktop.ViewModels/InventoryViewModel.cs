@@ -117,5 +117,5 @@ public sealed partial class InventoryViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void Back() => _navigation.ShowSelectedDatabase();
+    private void Back() => _navigation.ShowDashboard();
 }

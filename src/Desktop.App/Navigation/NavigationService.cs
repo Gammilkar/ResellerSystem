@@ -29,22 +29,33 @@ public sealed class NavigationService : INavigationService
 
     public void ShowCreateDatabase() => SetCurrent(_services.GetRequiredService<CreateDatabaseViewModel>());
 
-    public void ShowSelectedDatabase()
+    public void ShowDashboard()
     {
-        var vm = _services.GetRequiredService<SelectedDatabaseViewModel>();
+        SetDatabaseIdFromSession();
+
+        var vm = _services.GetRequiredService<DashboardViewModel>();
         SetCurrent(vm);
         _ = vm.LoadCommand.ExecuteAsync(null);
     }
 
     public void ShowInventory()
     {
-        var apiClient = _services.GetRequiredService<Services.Api.IServerApiClient>();
-        var session = _services.GetRequiredService<ClientSessionState>();
-        apiClient.SetDatabaseId(session.SelectedDatabase?.Id);
+        SetDatabaseIdFromSession();
 
         var vm = _services.GetRequiredService<InventoryViewModel>();
         SetCurrent(vm);
         _ = vm.LoadCommand.ExecuteAsync(null);
+    }
+
+    // Every screen scoped to a selected tenant database (Dashboard,
+    // Inventory, and future Sales/Returns/Listings/... screens) needs
+    // X-Database-Id attached before it calls the API — set it here rather
+    // than duplicating this in each Show*() method.
+    private void SetDatabaseIdFromSession()
+    {
+        var apiClient = _services.GetRequiredService<Services.Api.IServerApiClient>();
+        var session = _services.GetRequiredService<ClientSessionState>();
+        apiClient.SetDatabaseId(session.SelectedDatabase?.Id);
     }
 
     private void SetCurrent(ViewModelBase viewModel)

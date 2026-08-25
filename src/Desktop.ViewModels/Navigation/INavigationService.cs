@@ -9,6 +9,6 @@ public interface INavigationService
     void ShowLogin();
     void ShowDatabaseList();
     void ShowCreateDatabase();
-    void ShowSelectedDatabase();
+    void ShowDashboard();
     void ShowInventory();
 }

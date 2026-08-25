@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using ResellerSystem.Modules.Dashboard;
 using ResellerSystem.Modules.Documents;
 using ResellerSystem.Modules.Expenses;
 using ResellerSystem.Modules.Import;
@@ -43,7 +44,8 @@ var modules = new List<IResellerModule>
     new ExpensesModule(),
     new DocumentsModule(),
     new ReportsModule(),
-    new ImportModule()
+    new ImportModule(),
+    new DashboardModule()
 };
 
 builder.Services.AddServerApiServices(builder.Configuration, modules);

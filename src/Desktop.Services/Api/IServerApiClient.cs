@@ -46,4 +46,6 @@ public interface IServerApiClient
     Task<PurchaseDto> CreatePurchaseAsync(CreatePurchaseRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<ItemDto>> ListItemsAsync(string? status, CancellationToken ct = default);
     Task<ItemDto> UpdateItemAsync(Guid id, UpdateItemRequest request, CancellationToken ct = default);
+
+    Task<DashboardSummaryDto> GetDashboardSummaryAsync(CancellationToken ct = default);
 }

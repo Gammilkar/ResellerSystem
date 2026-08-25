@@ -41,7 +41,7 @@ public sealed class App : Application
         services.AddTransient<LoginViewModel>();
         services.AddTransient<DatabaseListViewModel>();
         services.AddTransient<CreateDatabaseViewModel>();
-        services.AddTransient<SelectedDatabaseViewModel>();
+        services.AddTransient<DashboardViewModel>();
         services.AddTransient<InventoryViewModel>();
 
         services.AddSingleton<INavigationService, NavigationService>();

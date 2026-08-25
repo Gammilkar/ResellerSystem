@@ -57,7 +57,7 @@ public sealed partial class CreateDatabaseViewModel : ViewModelBase
             });
 
             _session.SelectedDatabase = created;
-            _navigation.ShowSelectedDatabase();
+            _navigation.ShowDashboard();
         }
         catch (ServerApiException ex)
         {

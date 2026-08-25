@@ -1,0 +1,75 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ResellerSystem.Desktop.ViewModels"
+             xmlns:dto="using:ResellerSystem.Domain.Shared.Dto"
+             x:Class="ResellerSystem.Desktop.App.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel">
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
+            <TextBlock Text="{Binding DatabaseName}" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" />
+            <Button Content="Refresh" Command="{Binding LoadCommand}" />
+            <Button Content="Open Inventory" Command="{Binding OpenInventoryCommand}" />
+            <Button Content="Change Database" Command="{Binding ChangeDatabaseCommand}" />
+        </StackPanel>
+
+        <TextBlock DockPanel.Dock="Top" Text="{Binding ErrorMessage}" Foreground="Red"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                    Margin="0,0,0,8" />
+
+        <ScrollViewer>
+            <StackPanel Spacing="16">
+                <WrapPanel>
+                    <Border BorderBrush="Gray" BorderThickness="1" Padding="12" Margin="0,0,12,12" MinWidth="220">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Inventory" FontWeight="Bold" />
+                            <TextBlock Text="{Binding InventoryOnHandCostBasis, StringFormat='Cost basis on hand: {0:C}'}" />
+                            <TextBlock Text="{Binding InventoryOnHandCount, StringFormat='Items on hand: {0}'}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border BorderBrush="Gray" BorderThickness="1" Padding="12" Margin="0,0,12,12" MinWidth="220">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Profit" FontWeight="Bold" />
+                            <TextBlock Text="{Binding NetProfitAllTime, StringFormat='All time: {0:C}'}" />
+                            <TextBlock Text="{Binding NetProfitThisMonth, StringFormat='This month: {0:C}'}" />
+                            <TextBlock Text="{Binding NetProfitThisWeek, StringFormat='This week: {0:C}'}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border BorderBrush="Gray" BorderThickness="1" Padding="12" Margin="0,0,12,12" MinWidth="220">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Sales" FontWeight="Bold" />
+                            <TextBlock Text="{Binding ItemsSoldAllTime, StringFormat='All time: {0}'}" />
+                            <TextBlock Text="{Binding ItemsSoldThisMonth, StringFormat='This month: {0}'}" />
+                            <TextBlock Text="{Binding ItemsSoldThisWeek, StringFormat='This week: {0}'}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border BorderBrush="Gray" BorderThickness="1" Padding="12" Margin="0,0,12,12" MinWidth="220">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Additional" FontWeight="Bold" />
+                            <TextBlock Text="{Binding GrossSalesAllTime, StringFormat='Gross sales (all time): {0:C}'}" />
+                            <TextBlock Text="{Binding AverageRoiPercent, StringFormat='Average ROI: {0}%', TargetNullValue='Average ROI: —'}" />
+                            <TextBlock Text="{Binding AverageDaysToSell, StringFormat='Average days to sell: {0:F0}', TargetNullValue='Average days to sell: —'}" />
+                        </StackPanel>
+                    </Border>
+                </WrapPanel>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Inventory Aging" FontWeight="Bold" />
+                    <ItemsControl ItemsSource="{Binding InventoryAging}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="dto:InventoryAgingRowDto">
+                                <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,0,0,4">
+                                    <TextBlock Text="{Binding Bucket}" Width="60" />
+                                    <TextBlock Text="{Binding ItemCount, StringFormat='{}{0} items'}" Width="100" />
+                                    <TextBlock Text="{Binding TotalCostBasis, StringFormat='{}{0:C}'}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

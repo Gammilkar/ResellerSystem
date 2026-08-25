@@ -73,7 +73,7 @@ public sealed partial class DatabaseListViewModel : ViewModelBase
         }
 
         _session.SelectedDatabase = Selected;
-        _navigation.ShowSelectedDatabase();
+        _navigation.ShowDashboard();
     }
 
     [RelayCommand]
