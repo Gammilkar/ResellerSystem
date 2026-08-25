@@ -1,0 +1,56 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ResellerSystem.Desktop.ViewModels"
+        x:Class="ResellerSystem.Desktop.App.Views.ItemCardDialog"
+        x:DataType="vm:ItemCardDialogViewModel"
+        Title="Карточка товара"
+        Width="420" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <StackPanel Margin="20" Spacing="10">
+        <TextBlock Text="{Binding ItemNumber, StringFormat='Товар № {0}'}" FontWeight="Bold" FontSize="16" />
+
+        <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap"
+                   IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+        <StackPanel Spacing="4">
+            <TextBlock Text="Наименование" FontSize="11" />
+            <TextBox Text="{Binding Name}" />
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+            <TextBlock Text="Категория" FontSize="11" />
+            <TextBox Text="{Binding CategoryName}" />
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+            <TextBlock Text="Статус" FontSize="11" />
+            <ComboBox ItemsSource="{Binding StatusOptionsList}"
+                      SelectedValueBinding="{Binding Code}"
+                      SelectedValue="{Binding Status}"
+                      DisplayMemberBinding="{Binding Label}"
+                      HorizontalAlignment="Stretch" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="16">
+            <StackPanel Spacing="4">
+                <TextBlock Text="Расчётная себестоимость" FontSize="11" />
+                <TextBlock Text="{Binding CostBasisCalculated, StringFormat={}{0:C}}" VerticalAlignment="Center" Margin="4,4,0,4" />
+            </StackPanel>
+            <StackPanel Spacing="4">
+                <TextBlock Text="Переопределить (необязательно)" FontSize="11" />
+                <TextBox Text="{Binding CostBasisOverrideText}" Width="120" />
+            </StackPanel>
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+            <TextBlock Text="Заметки" FontSize="11" />
+            <TextBox Text="{Binding Notes}" AcceptsReturn="True" TextWrapping="Wrap" Height="70" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Content="Отмена" Command="{Binding CancelCommand}" />
+            <Button Content="Сохранить" Command="{Binding SaveCommand}" IsEnabled="{Binding !IsSaving}" />
+        </StackPanel>
+    </StackPanel>
+</Window>

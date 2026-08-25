@@ -1,9 +1,11 @@
 using System.Net.Http;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using ResellerSystem.Desktop.App.Navigation;
+using ResellerSystem.Desktop.App.Views;
 using ResellerSystem.Desktop.Services;
 using ResellerSystem.Desktop.Services.Api;
 using ResellerSystem.Desktop.ViewModels;
@@ -49,6 +51,16 @@ public sealed class App : Application
         services.AddTransient<ImportViewModel>();
 
         services.AddSingleton<INavigationService, NavigationService>();
+
+        // Every modal dialog Window this app opens is registered here, once —
+        // see IDialogService's doc comment for why Window.ShowDialog was
+        // chosen over an in-window overlay pattern.
+        services.AddSingleton<IDialogService>(sp => new DialogService(
+            new Dictionary<Type, Func<Window>>
+            {
+                [typeof(ItemCardDialogViewModel)] = () => new ItemCardDialog()
+            },
+            () => (Window)((IClassicDesktopStyleApplicationLifetime)ApplicationLifetime!).MainWindow!));
 
         Services = services.BuildServiceProvider();
 

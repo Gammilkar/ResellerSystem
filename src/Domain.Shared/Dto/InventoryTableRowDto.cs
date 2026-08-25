@@ -12,15 +12,18 @@ public sealed class InventoryTableRowDto
     public required string Name { get; init; }
     public required string Status { get; init; }
 
+    public required Guid PurchaseId { get; init; }
     public required DateOnly PurchaseDate { get; init; }
     public required string PurchaseSourceName { get; init; }
     public required string PurchaseType { get; init; }
 
     public required decimal CostBasis { get; init; }
 
+    public Guid? ListingId { get; init; }
     public DateOnly? ListingPublishedDate { get; init; }
     public string? ListingMarketplace { get; init; }
 
+    public Guid? SaleId { get; init; }
     public DateOnly? SaleDate { get; init; }
     public string? SaleMarketplace { get; init; }
     public decimal? SalePrice { get; init; }

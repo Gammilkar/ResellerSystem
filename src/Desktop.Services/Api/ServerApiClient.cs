@@ -118,10 +118,16 @@ public sealed class ServerApiClient : IServerApiClient
     public Task<PurchaseDto> CreatePurchaseAsync(CreatePurchaseRequest request, CancellationToken ct = default) =>
         SendAsync<PurchaseDto>(HttpMethod.Post, "/api/v1/inventory/purchases", request, ct);
 
+    public Task<PurchaseDto> UpdatePurchaseAsync(Guid id, UpdatePurchaseRequest request, CancellationToken ct = default) =>
+        SendAsync<PurchaseDto>(HttpMethod.Patch, $"/api/v1/inventory/purchases/{id}", request, ct);
+
     public Task<IReadOnlyList<ItemDto>> ListItemsAsync(string? status, CancellationToken ct = default) =>
         SendAsync<IReadOnlyList<ItemDto>>(HttpMethod.Get,
             string.IsNullOrWhiteSpace(status) ? "/api/v1/inventory/items" : $"/api/v1/inventory/items?status={Uri.EscapeDataString(status)}",
             null, ct);
+
+    public Task<ItemDto> GetItemAsync(Guid id, CancellationToken ct = default) =>
+        SendAsync<ItemDto>(HttpMethod.Get, $"/api/v1/inventory/items/{id}", null, ct);
 
     public Task<ItemDto> UpdateItemAsync(Guid id, UpdateItemRequest request, CancellationToken ct = default) =>
         SendAsync<ItemDto>(HttpMethod.Patch, $"/api/v1/inventory/items/{id}", request, ct);

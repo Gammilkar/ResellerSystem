@@ -35,21 +35,21 @@ public sealed class InventoryTableReader : IInventoryTableReader
         const string sqlWithSales = """
             SELECT
                 i.id, i.item_number, i.name, i.status,
-                p.purchase_date, p.source_name, p.purchase_type,
+                p.id AS purchase_id, p.purchase_date, p.source_name, p.purchase_type,
                 COALESCE(i.cost_basis_override, i.cost_basis_calculated) AS cost_basis,
-                l.published_date, l.marketplace AS listing_marketplace,
-                s.sale_date, s.marketplace AS sale_marketplace, s.item_sale_price
+                l.id AS listing_id, l.published_date, l.marketplace AS listing_marketplace,
+                s.id AS sale_id, s.sale_date, s.marketplace AS sale_marketplace, s.item_sale_price
             FROM items i
             JOIN purchases p ON p.id = i.purchase_id
             LEFT JOIN LATERAL (
-                SELECT published_date, marketplace
+                SELECT id, published_date, marketplace
                 FROM listings
                 WHERE listings.item_id = i.id AND listings.deleted_at IS NULL
                 ORDER BY published_date DESC NULLS LAST, created_at DESC
                 LIMIT 1
             ) l ON true
             LEFT JOIN LATERAL (
-                SELECT sale_date, marketplace, item_sale_price
+                SELECT id, sale_date, marketplace, item_sale_price
                 FROM sales
                 WHERE sales.item_id = i.id AND sales.deleted_at IS NULL
                 ORDER BY sale_date DESC
@@ -62,7 +62,7 @@ public sealed class InventoryTableReader : IInventoryTableReader
         const string sqlItemsOnly = """
             SELECT
                 i.id, i.item_number, i.name, i.status,
-                p.purchase_date, p.source_name, p.purchase_type,
+                p.id AS purchase_id, p.purchase_date, p.source_name, p.purchase_type,
                 COALESCE(i.cost_basis_override, i.cost_basis_calculated) AS cost_basis
             FROM items i
             JOIN purchases p ON p.id = i.purchase_id
@@ -99,16 +99,18 @@ public sealed class InventoryTableReader : IInventoryTableReader
         while (await reader.ReadAsync(ct))
         {
             // Column layout: 0=id 1=item_number 2=name 3=status
-            // 4=purchase_date 5=source_name 6=purchase_type 7=cost_basis
-            // — identical in both queries. Only sqlWithSales has more:
-            // 8=published_date 9=listing_marketplace 10=sale_date
-            // 11=sale_marketplace 12=item_sale_price.
-            var purchaseDate = DateOnly.FromDateTime(reader.GetDateTime(4));
-            DateOnly? publishedDate = includeSalesColumns && !reader.IsDBNull(8) ? DateOnly.FromDateTime(reader.GetDateTime(8)) : null;
-            string? listingMarketplace = includeSalesColumns && !reader.IsDBNull(9) ? reader.GetString(9) : null;
-            DateOnly? saleDate = includeSalesColumns && !reader.IsDBNull(10) ? DateOnly.FromDateTime(reader.GetDateTime(10)) : null;
-            string? saleMarketplace = includeSalesColumns && !reader.IsDBNull(11) ? reader.GetString(11) : null;
-            decimal? salePrice = includeSalesColumns && !reader.IsDBNull(12) ? reader.GetDecimal(12) : null;
+            // 4=purchase_id 5=purchase_date 6=source_name 7=purchase_type
+            // 8=cost_basis — identical in both queries. Only sqlWithSales
+            // has more: 9=listing_id 10=published_date 11=listing_marketplace
+            // 12=sale_id 13=sale_date 14=sale_marketplace 15=item_sale_price.
+            var purchaseDate = DateOnly.FromDateTime(reader.GetDateTime(5));
+            Guid? listingId = includeSalesColumns && !reader.IsDBNull(9) ? reader.GetGuid(9) : null;
+            DateOnly? publishedDate = includeSalesColumns && !reader.IsDBNull(10) ? DateOnly.FromDateTime(reader.GetDateTime(10)) : null;
+            string? listingMarketplace = includeSalesColumns && !reader.IsDBNull(11) ? reader.GetString(11) : null;
+            Guid? saleId = includeSalesColumns && !reader.IsDBNull(12) ? reader.GetGuid(12) : null;
+            DateOnly? saleDate = includeSalesColumns && !reader.IsDBNull(13) ? DateOnly.FromDateTime(reader.GetDateTime(13)) : null;
+            string? saleMarketplace = includeSalesColumns && !reader.IsDBNull(14) ? reader.GetString(14) : null;
+            decimal? salePrice = includeSalesColumns && !reader.IsDBNull(15) ? reader.GetDecimal(15) : null;
 
             int? daysListed = null;
             var listedFrom = publishedDate ?? purchaseDate;
@@ -127,12 +129,15 @@ public sealed class InventoryTableReader : IInventoryTableReader
                 ItemNumber = reader.GetInt64(1),
                 Name = reader.GetString(2),
                 Status = reader.GetString(3),
+                PurchaseId = reader.GetGuid(4),
                 PurchaseDate = purchaseDate,
-                PurchaseSourceName = reader.GetString(5),
-                PurchaseType = reader.GetString(6),
-                CostBasis = reader.GetDecimal(7),
+                PurchaseSourceName = reader.GetString(6),
+                PurchaseType = reader.GetString(7),
+                CostBasis = reader.GetDecimal(8),
+                ListingId = listingId,
                 ListingPublishedDate = publishedDate,
                 ListingMarketplace = listingMarketplace,
+                SaleId = saleId,
                 SaleDate = saleDate,
                 SaleMarketplace = saleMarketplace,
                 SalePrice = salePrice,

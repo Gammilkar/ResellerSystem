@@ -32,13 +32,16 @@ public sealed partial class InventoryViewModel : ViewModelBase
     private readonly ClientSessionState _session;
     private readonly ITableSettingsStore _settingsStore;
     private readonly INavigationService _navigation;
+    private readonly IDialogService _dialogService;
 
-    public InventoryViewModel(IServerApiClient apiClient, ClientSessionState session, ITableSettingsStore settingsStore, INavigationService navigation)
+    public InventoryViewModel(IServerApiClient apiClient, ClientSessionState session, ITableSettingsStore settingsStore,
+        INavigationService navigation, IDialogService dialogService)
     {
         _apiClient = apiClient;
         _session = session;
         _settingsStore = settingsStore;
         _navigation = navigation;
+        _dialogService = dialogService;
 
         LoadColumnSettings();
     }
@@ -98,6 +101,48 @@ public sealed partial class InventoryViewModel : ViewModelBase
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task OpenItemCardAsync(InventoryTableRowDto row)
+    {
+        var dialogVm = new ItemCardDialogViewModel(row.ItemId, _apiClient);
+        var saved = await _dialogService.ShowAsync<ItemCardDialogViewModel, bool>(dialogVm);
+        if (saved) await LoadAsync();
+    }
+
+    [RelayCommand]
+    private async Task UpdateStatusAsync((InventoryTableRowDto Row, string NewStatus) args)
+    {
+        if (args.NewStatus == args.Row.Status) return; // ComboBox fires SelectionChanged on initial bind too — no real change here
+
+        ErrorMessage = null;
+        try
+        {
+            await _apiClient.UpdateItemAsync(args.Row.ItemId, new UpdateItemRequest { Status = args.NewStatus });
+            await LoadAsync();
+        }
+        catch (ServerApiException ex)
+        {
+            ErrorMessage = ex.Error.Message;
+        }
+    }
+
+    [RelayCommand]
+    private async Task UpdatePurchaseTypeAsync((InventoryTableRowDto Row, string NewType) args)
+    {
+        if (args.NewType == args.Row.PurchaseType) return;
+
+        ErrorMessage = null;
+        try
+        {
+            await _apiClient.UpdatePurchaseAsync(args.Row.PurchaseId, new UpdatePurchaseRequest { PurchaseType = args.NewType });
+            await LoadAsync();
+        }
+        catch (ServerApiException ex)
+        {
+            ErrorMessage = ex.Error.Message;
         }
     }
 
