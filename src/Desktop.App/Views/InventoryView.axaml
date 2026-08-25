@@ -117,12 +117,19 @@
                     <Setter Property="Padding" Value="6,4" />
                 </Style>
             </DataGrid.Styles>
+            <!-- Every cell below binds FontSize directly to DataFontSize
+                 rather than relying on inheriting the DataGrid's own
+                 FontSize — Button/ComboBox/AutoCompleteBox/TextBox all
+                 pull their FontSize from the Fluent theme's own resources
+                 by default, which overrides simple ambient inheritance for
+                 anything that isn't a bare TextBlock. -->
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="№ товара" Width="90" SortMemberPath="ItemNumber"
                                         IsVisible="{Binding ShowItemNumberColumn}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
-                            <TextBlock Text="{Binding ItemNumber}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding ItemNumber}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center"
+                                       FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -133,7 +140,8 @@
                             <Button Classes="cell-link"
                                     Command="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).OpenItemCardCommand}"
                                     CommandParameter="{Binding}">
-                                <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding Name}" TextWrapping="Wrap"
+                                           FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}" />
                             </Button>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
@@ -147,6 +155,7 @@
                                       SelectedValue="{Binding Status, Mode=OneWay}"
                                       DisplayMemberBinding="{Binding Label}"
                                       SelectionChanged="StatusCombo_SelectionChanged"
+                                      FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}"
                                       HorizontalAlignment="Stretch" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
@@ -158,7 +167,8 @@
                             <Button Classes="cell-link"
                                     Command="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).OpenPurchaseDateCommand}"
                                     CommandParameter="{Binding}">
-                                <TextBlock Text="{Binding PurchaseDate}" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding PurchaseDate}" TextWrapping="Wrap"
+                                           FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}" />
                             </Button>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
@@ -170,7 +180,8 @@
                             <Button Classes="cell-link"
                                     Command="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).OpenPurchaseSourceCommand}"
                                     CommandParameter="{Binding}">
-                                <TextBlock Text="{Binding PurchaseSourceName}" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding PurchaseSourceName}" TextWrapping="Wrap"
+                                           FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}" />
                             </Button>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
@@ -184,6 +195,7 @@
                                       SelectedValue="{Binding PurchaseType, Mode=OneWay}"
                                       DisplayMemberBinding="{Binding Label}"
                                       SelectionChanged="PurchaseTypeCombo_SelectionChanged"
+                                      FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}"
                                       HorizontalAlignment="Stretch" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
@@ -192,7 +204,8 @@
                                         IsVisible="{Binding ShowCostBasisColumn}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
-                            <TextBlock Text="{Binding CostBasis, StringFormat={}{0:C}}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding CostBasis, StringFormat={}{0:C}}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center"
+                                       FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -203,7 +216,8 @@
                             <Button Classes="cell-link"
                                     Command="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).OpenListingDateCommand}"
                                     CommandParameter="{Binding}">
-                                <TextBlock Text="{Binding ListingPublishedDate, TargetNullValue='—'}" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding ListingPublishedDate, TargetNullValue='—'}" TextWrapping="Wrap"
+                                           FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}" />
                             </Button>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
@@ -217,6 +231,7 @@
                                       FilterMode="StartsWith"
                                       MinimumPrefixLength="0"
                                       LostFocus="ListingMarketplaceCombo_LostFocus"
+                                      FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}"
                                       HorizontalAlignment="Stretch" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
@@ -228,7 +243,8 @@
                             <Button Classes="cell-link"
                                     Command="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).OpenSaleDateCommand}"
                                     CommandParameter="{Binding}">
-                                <TextBlock Text="{Binding SaleDate, TargetNullValue='—'}" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding SaleDate, TargetNullValue='—'}" TextWrapping="Wrap"
+                                           FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}" />
                             </Button>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
@@ -242,6 +258,7 @@
                                       FilterMode="StartsWith"
                                       MinimumPrefixLength="0"
                                       LostFocus="SaleMarketplaceCombo_LostFocus"
+                                      FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}"
                                       HorizontalAlignment="Stretch" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
@@ -252,6 +269,7 @@
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
                             <TextBox Text="{Binding SalePrice, Mode=OneWay, StringFormat={}{0:0.00}}"
                                      LostFocus="SalePriceBox_LostFocus"
+                                     FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}"
                                      Background="Transparent" BorderThickness="0" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
@@ -260,7 +278,8 @@
                                         IsVisible="{Binding ShowDaysListedColumn}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
-                            <TextBlock Text="{Binding DaysListed}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding DaysListed}" TextWrapping="Wrap" Margin="6,4" VerticalAlignment="Center"
+                                       FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
