@@ -4,7 +4,8 @@ namespace ResellerSystem.Desktop.Services;
 
 public sealed record TableSettings(
     double FontSize,
-    Dictionary<string, bool> ColumnVisibility);
+    Dictionary<string, bool> ColumnVisibility,
+    double HeaderFontSize = 0);
 
 /// <summary>Per-grid display preferences (font size, which columns are
 /// shown) — local to this machine/user, not synced to the server. Plain

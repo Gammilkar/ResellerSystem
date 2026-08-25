@@ -59,12 +59,12 @@ public sealed partial class InventoryViewModel : ViewModelBase
     [ObservableProperty] private bool _isSavingPurchase;
     [ObservableProperty] private bool _showNewPurchaseForm;
 
-    // Display settings
+    // Display settings — Text size (DataFontSize) and Header text size
+    // (HeaderFontSize) are independently adjustable; they used to be tied
+    // together (Header = Data + 1) until the user asked for separate control.
     [ObservableProperty] private bool _showSettingsPanel;
     [ObservableProperty] private double _dataFontSize = DefaultFontSize;
-
-    public double HeaderFontSize => DataFontSize + 1;
-    partial void OnDataFontSizeChanged(double value) => OnPropertyChanged(nameof(HeaderFontSize));
+    [ObservableProperty] private double _headerFontSize = DefaultFontSize + 1;
 
     // Column visibility — includes columns hidden by default (ItemNumber)
     // so "add other column types" has somewhere real to come from, not
@@ -317,6 +317,9 @@ public sealed partial class InventoryViewModel : ViewModelBase
         if (saved is null) return;
 
         DataFontSize = saved.FontSize;
+        // 0 means "not saved yet" (older settings files predate the
+        // separate header-size control) — fall back to the old Data+1 rule.
+        HeaderFontSize = saved.HeaderFontSize > 0 ? saved.HeaderFontSize : saved.FontSize + 1;
 
         bool Get(string key, bool fallback) => saved.ColumnVisibility.TryGetValue(key, out var v) ? v : fallback;
         ShowItemNumberColumn = Get(nameof(ShowItemNumberColumn), ShowItemNumberColumn);
@@ -352,7 +355,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
             [nameof(ShowSalePriceColumn)] = ShowSalePriceColumn,
             [nameof(ShowDaysListedColumn)] = ShowDaysListedColumn
         };
-        _settingsStore.Save(TableKey, new TableSettings(DataFontSize, visibility));
+        _settingsStore.Save(TableKey, new TableSettings(DataFontSize, visibility, HeaderFontSize));
     }
 
     [RelayCommand]

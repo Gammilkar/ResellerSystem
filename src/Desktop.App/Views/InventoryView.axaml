@@ -49,9 +49,15 @@
             <StackPanel Spacing="10">
                 <TextBlock Text="Table Settings" FontWeight="Bold" />
 
-                <StackPanel Spacing="4">
-                    <TextBlock Text="Text size" FontSize="11" />
-                    <NumericUpDown Value="{Binding DataFontSize}" Minimum="9" Maximum="24" Increment="1" Width="120" />
+                <StackPanel Orientation="Horizontal" Spacing="24">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Основной текст" FontSize="11" />
+                        <NumericUpDown Value="{Binding DataFontSize}" Minimum="9" Maximum="24" Increment="1" Width="120" />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Текст заголовков" FontSize="11" />
+                        <NumericUpDown Value="{Binding HeaderFontSize}" Minimum="9" Maximum="24" Increment="1" Width="120" />
+                    </StackPanel>
                 </StackPanel>
                 <TextBlock Text="Высота строки подстраивается автоматически под текст (перенос по словам, как в Excel)."
                            FontSize="10" Foreground="Gray" TextWrapping="Wrap" MaxWidth="400" />
