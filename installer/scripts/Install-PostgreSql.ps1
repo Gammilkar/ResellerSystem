@@ -24,7 +24,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$pgBinDir   = Join-Path $InstallDir "postgresql\bin"
+$pgBinDir   = Join-Path $InstallDir "postgresql\pgsql\bin"
 $pgCtl      = Join-Path $pgBinDir "pg_ctl.exe"
 $initdb     = Join-Path $pgBinDir "initdb.exe"
 $psql       = Join-Path $pgBinDir "psql.exe"
@@ -53,7 +53,7 @@ if (Test-Path $credFile) {
 
     # Lock the credentials file down to Administrators + SYSTEM only.
     icacls $credFile /inheritance:r | Out-Null
-    icacls $credFile /grant:r "SYSTEM:(F)" "BUILTIN\Administrators:(F)" | Out-Null
+    icacls $credFile /grant:r "SYSTEM:(F)" "*S-1-5-32-544:(F)" | Out-Null
     Write-Log "Generated new local PostgreSQL admin credentials, written to $credFile (ACL-restricted)."
 }
 
@@ -85,9 +85,8 @@ if (-not (Test-Path (Join-Path $DataDir "PG_VERSION"))) {
 $existingService = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
 if (-not $existingService) {
     Write-Log "Registering Windows Service '$ServiceName' ..."
-    & $pgCtl register -N $ServiceName -D "$DataDir" -w `
-        -o "-p $Port" `
-        --startup-type=automatic-delayed | Out-Null
+    & $pgCtl register -N $ServiceName -D "$DataDir" -S auto -w `
+        -o "-p $Port" | Out-Null
 } else {
     Write-Log "Service '$ServiceName' already registered."
 }
@@ -124,7 +123,7 @@ $settings = @{
 }
 $settings | ConvertTo-Json -Depth 5 | Set-Content -Path $appsettingsPath -Encoding UTF8
 icacls $appsettingsPath /inheritance:r | Out-Null
-icacls $appsettingsPath /grant:r "SYSTEM:(F)" "BUILTIN\Administrators:(F)" | Out-Null
+icacls $appsettingsPath /grant:r "SYSTEM:(F)" "*S-1-5-32-544:(F)" | Out-Null
 
 Write-Log "Wrote production connection settings to $appsettingsPath (ACL-restricted, not in git)."
 Write-Log "PostgreSQL provisioning finished successfully."
