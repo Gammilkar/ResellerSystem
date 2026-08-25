@@ -57,7 +57,7 @@ Start-Service -Name $ServiceName
 Write-Log "Service start requested. Waiting for /health ..."
 
 $healthy = $false
-for ($i = 0; $i -lt 60; $i++) {
+for ($i = 0; $i -lt 150; $i++) {
     try {
         $response = Invoke-RestMethod -Uri "http://localhost:$Port/health" -TimeoutSec 2
         if ($response.status -eq "healthy") { $healthy = $true; break }
@@ -66,7 +66,7 @@ for ($i = 0; $i -lt 60; $i++) {
 }
 
 if (-not $healthy) {
-    Write-Log "ERROR: server did not report healthy within 120 seconds. Check logs under $InstallDir\logs."
+    Write-Log "ERROR: server did not report healthy within 300 seconds. Check logs under $InstallDir\logs."
     exit 1
 }
 
