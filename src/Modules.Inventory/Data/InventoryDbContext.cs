@@ -84,6 +84,17 @@ public sealed class InventoryDbContext : DbContext
 
             entity.HasQueryFilter(e => e.DeletedAt == null);
             entity.HasIndex(e => e.ItemNumber).IsUnique();
+
+            // EF must know about this FK (it exists at the DB level via
+            // 0004_purchase_lines.sql's REFERENCES clause) so it inserts the
+            // parent PurchaseItemLine row before any Item row that points to
+            // it within the same SaveChangesAsync — without this, EF has no
+            // dependency edge between the two tables' insert batches and can
+            // (and did) execute them in the wrong order, violating the FK.
+            entity.HasOne<PurchaseItemLine>()
+                .WithMany()
+                .HasForeignKey(e => e.PurchaseItemLineId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Supplier>(entity =>

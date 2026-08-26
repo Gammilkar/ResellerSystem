@@ -12,8 +12,10 @@
     <PackageReference Include="FluentAssertions" Version="6.12.0" />
     <PackageReference Include="NSubstitute" Version="5.1.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.0" />
+    <PackageReference Include="Testcontainers.PostgreSql" Version="3.9.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Modules.Inventory\Modules.Inventory.csproj" />
+    <ProjectReference Include="..\..\src\Server.Data\Server.Data.csproj" />
   </ItemGroup>
 </Project>
