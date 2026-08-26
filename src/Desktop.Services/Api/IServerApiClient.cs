@@ -98,6 +98,7 @@ public interface IServerApiClient
     Task<DocumentDto> LinkDocumentAsync(Guid documentId, string entityType, Guid entityId, CancellationToken ct = default);
     Task<IReadOnlyList<DocumentDto>> ListDocumentsForEntityAsync(string entityType, Guid entityId, CancellationToken ct = default);
     Task<(byte[] Content, string? MimeType, string Filename)> DownloadDocumentAsync(Guid documentId, CancellationToken ct = default);
+    Task DeleteDocumentLinkAsync(Guid documentId, string entityType, Guid entityId, CancellationToken ct = default);
 
     Task<IReadOnlyList<AuditLogEntryDto>> GetAuditLogAsync(string? entityType, Guid? entityId, int limit = 200, CancellationToken ct = default);
 

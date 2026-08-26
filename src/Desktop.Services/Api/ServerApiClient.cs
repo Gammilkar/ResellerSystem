@@ -259,6 +259,9 @@ public sealed class ServerApiClient : IServerApiClient
     public Task<IReadOnlyList<DocumentDto>> ListDocumentsForEntityAsync(string entityType, Guid entityId, CancellationToken ct = default) =>
         SendAsync<IReadOnlyList<DocumentDto>>(HttpMethod.Get, $"/api/v1/documents/for/{Uri.EscapeDataString(entityType)}/{entityId}", null, ct);
 
+    public Task DeleteDocumentLinkAsync(Guid documentId, string entityType, Guid entityId, CancellationToken ct = default) =>
+        SendNoContentAsync(HttpMethod.Delete, $"/api/v1/documents/{documentId}/links/{Uri.EscapeDataString(entityType)}/{entityId}", null, ct);
+
     public async Task<(byte[] Content, string? MimeType, string Filename)> DownloadDocumentAsync(Guid documentId, CancellationToken ct = default)
     {
         using var response = await _httpClient.GetAsync($"/api/v1/documents/{documentId}/content", ct);

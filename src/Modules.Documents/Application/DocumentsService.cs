@@ -15,6 +15,7 @@ public interface IDocumentsService
     Task<DocumentDto> LinkAsync(Guid documentId, CreateDocumentLinkRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<DocumentDto>> ListForEntityAsync(string entityType, Guid entityId, CancellationToken ct = default);
     Task<(Stream Content, string MimeType, string Filename)> DownloadAsync(Guid documentId, CancellationToken ct = default);
+    Task DeleteLinkAsync(Guid documentId, string entityType, Guid entityId, CancellationToken ct = default);
 }
 
 public sealed class DocumentsService : IDocumentsService
@@ -127,6 +128,38 @@ public sealed class DocumentsService : IDocumentsService
         }
 
         return (File.OpenRead(fullPath), document.MimeType ?? "application/octet-stream", document.OriginalFilename);
+    }
+
+    public async Task DeleteLinkAsync(Guid documentId, string entityType, Guid entityId, CancellationToken ct = default)
+    {
+        await using var db = _dbContextFactory.CreateForCurrentTenant();
+
+        var link = await db.DocumentLinks.FirstOrDefaultAsync(
+            l => l.DocumentId == documentId && l.EntityType == entityType && l.EntityId == entityId, ct)
+            ?? throw new NotFoundException("DOCUMENT_LINK_NOT_FOUND", "Document link was not found.");
+        db.DocumentLinks.Remove(link);
+        await db.SaveChangesAsync(ct);
+
+        var remainingLinks = await db.DocumentLinks.CountAsync(l => l.DocumentId == documentId, ct);
+        if (remainingLinks > 0) return;
+
+        var document = await db.Documents.FirstOrDefaultAsync(d => d.Id == documentId, ct);
+        if (document is null) return;
+
+        // Uploads are content-addressed by SHA-256 (see UploadAsync above),
+        // so two independent uploads of identical bytes can legitimately
+        // share one StoragePath across two separate Document rows — only
+        // delete the physical file once no other row still points at it.
+        var sharedPath = await db.Documents.AnyAsync(d => d.Id != documentId && d.StoragePath == document.StoragePath, ct);
+
+        db.Documents.Remove(document);
+        await db.SaveChangesAsync(ct);
+
+        if (!sharedPath)
+        {
+            var fullPath = Path.Combine(_fileStorage.StorageRoot, document.StoragePath);
+            if (File.Exists(fullPath)) File.Delete(fullPath);
+        }
     }
 
     private static DocumentDto ToDto(Document d, IEnumerable<DocumentLink> links) => new()

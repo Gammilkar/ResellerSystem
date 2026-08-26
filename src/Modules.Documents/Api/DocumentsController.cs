@@ -37,4 +37,11 @@ public sealed class DocumentsController : ControllerBase
         var (content, mimeType, filename) = await _service.DownloadAsync(id, ct);
         return File(content, mimeType, filename);
     }
+
+    [HttpDelete("{id:guid}/links/{entityType}/{entityId:guid}")]
+    public async Task<IActionResult> DeleteLink(Guid id, string entityType, Guid entityId, CancellationToken ct)
+    {
+        await _service.DeleteLinkAsync(id, entityType, entityId, ct);
+        return NoContent();
+    }
 }

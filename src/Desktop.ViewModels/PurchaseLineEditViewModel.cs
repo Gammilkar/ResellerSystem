@@ -31,6 +31,18 @@ public sealed partial class PurchaseLineEditViewModel : ObservableObject
     /// UI to open the full Item Card dialog. Empty for a not-yet-saved line.</summary>
     public ObservableCollection<PurchaseLineItemRefDto> CreatedItems { get; } = new();
 
+    /// <summary>Raised when a money-affecting field changes, so the parent
+    /// screen can debounce-recalculate the whole purchase's allocation live
+    /// as the user types — see PurchaseEditViewModel.TriggerRecalculate.
+    /// ItemName/CategoryName/Notes deliberately don't raise this since they
+    /// don't affect the money math.</summary>
+    public event Action? RecalculationNeeded;
+
+    partial void OnQuantityChanged(int value) => RecalculationNeeded?.Invoke();
+    partial void OnUnitPurchaseCostChanged(decimal value) => RecalculationNeeded?.Invoke();
+    partial void OnManualAllocatedSalesTaxTextChanged(string? value) => RecalculationNeeded?.Invoke();
+    partial void OnManualAllocatedExpensesTextChanged(string? value) => RecalculationNeeded?.Invoke();
+
     public PurchaseLineEditViewModel Clone() => new()
     {
         ItemName = ItemName,

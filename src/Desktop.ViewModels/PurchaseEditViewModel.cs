@@ -17,13 +17,13 @@ namespace ResellerSystem.Desktop.ViewModels;
 /// every line into its physical Items atomically (PurchaseService.
 /// CreateAsync/UpdateAsync).
 ///
-/// Live-as-you-type preview (§13) is intentionally a "Пересчитать" button
-/// rather than a debounced auto-call on every keystroke — this app has no
-/// existing debounce infrastructure, and recalculating on every single
-/// property change would be noisy; Save always recalculates once more
-/// server-side regardless; a small deliberate scope simplification, not a
-/// prototype shortcut, is called out is fine per the codebase's convention
-/// of documenting such choices rather than hiding them.
+/// Live-as-you-type preview (§13) auto-recalculates via a 400ms debounce
+/// (TriggerRecalculate/DebouncedRecalculateAsync) whenever a money-affecting
+/// field changes — on this ViewModel directly, or bubbled up from a line's
+/// PurchaseLineEditViewModel.RecalculationNeeded event. The "Пересчитать"
+/// button (RecalculateCommand) stays as a manual fallback. _suppressRecalc
+/// prevents a recalculate-storm while ApplyDetail/CreateAnother populate
+/// fields programmatically.
 ///
 /// Documents attach only once the Purchase has a real Id — for a new
 /// purchase that means after the first Save, matching how most apps handle
@@ -37,6 +37,8 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
     private readonly INavigationService _navigation;
 
     private Guid? _purchaseId;
+    private CancellationTokenSource? _recalcCts;
+    private bool _suppressRecalc;
 
     public PurchaseEditViewModel(IServerApiClient apiClient, IDialogService dialogService,
         IFilePickerService filePickerService, INavigationService navigation)
@@ -45,6 +47,7 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
         _dialogService = dialogService;
         _filePickerService = filePickerService;
         _navigation = navigation;
+        ExpenseLines.CollectionChanged += (_, _) => TriggerRecalculate();
     }
 
     /// <summary>Called by NavigationService right after resolving this VM —
@@ -73,7 +76,20 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
     [ObservableProperty] private string? _comment;
 
     public bool ShowResellerPermitBlock => PurchaseType == "ResellerPermit";
-    partial void OnPurchaseTypeChanged(string value) => OnPropertyChanged(nameof(ShowResellerPermitBlock));
+    public bool ShowTaxPaidFields => PurchaseType == "TaxPaid";
+    public bool ShowNoTaxNotice => PurchaseType == "NoTax";
+
+    partial void OnPurchaseTypeChanged(string value)
+    {
+        OnPropertyChanged(nameof(ShowResellerPermitBlock));
+        OnPropertyChanged(nameof(ShowTaxPaidFields));
+        OnPropertyChanged(nameof(ShowNoTaxNotice));
+        if (value != "TaxPaid")
+        {
+            SalesTaxRateText = string.Empty;
+            SalesTaxAmountOverrideText = string.Empty;
+        }
+    }
 
     [ObservableProperty] private string? _permitNumber;
     [ObservableProperty] private DateOnly? _permitDate;
@@ -87,6 +103,13 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
     [ObservableProperty] private string _salesTaxAllocationMethod = "Proportional";
     [ObservableProperty] private string _expenseAllocationMethod = "Proportional";
     [ObservableProperty] private string _manualAdjustmentText = "0";
+
+    partial void OnTaxableAmountTextChanged(string value) => TriggerRecalculate();
+    partial void OnSalesTaxRateTextChanged(string value) => TriggerRecalculate();
+    partial void OnSalesTaxAmountOverrideTextChanged(string value) => TriggerRecalculate();
+    partial void OnManualAdjustmentTextChanged(string value) => TriggerRecalculate();
+    partial void OnSalesTaxAllocationMethodChanged(string value) => TriggerRecalculate();
+    partial void OnExpenseAllocationMethodChanged(string value) => TriggerRecalculate();
 
     public ObservableCollection<PurchaseExpenseLineEditViewModel> ExpenseLines { get; } = new();
     [ObservableProperty] private string _newExpenseType = "Other";
@@ -114,7 +137,7 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
     [ObservableProperty] private decimal _difference;
     [ObservableProperty] private int _physicalItemsToCreate;
     [ObservableProperty] private bool _isReadyToSave;
-    [ObservableProperty] private string _validationSummaryText = "Нажмите «Пересчитать», чтобы увидеть распределение.";
+    public ObservableCollection<string> ValidationErrors { get; } = new();
 
     // ── Documents ──────────────────────────────────────────────────────
     public ObservableCollection<DocumentDto> Documents { get; } = new();
@@ -140,7 +163,7 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
             }
             else
             {
-                ItemLines.Add(new PurchaseLineEditViewModel());
+                AttachLine(new PurchaseLineEditViewModel());
             }
         }
         catch (ServerApiException ex)
@@ -193,6 +216,19 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
 
     private void ApplyDetail(PurchaseDetailDto d)
     {
+        _suppressRecalc = true;
+        try
+        {
+            ApplyDetailCore(d);
+        }
+        finally
+        {
+            _suppressRecalc = false;
+        }
+    }
+
+    private void ApplyDetailCore(PurchaseDetailDto d)
+    {
         PurchaseDateValue = d.PurchaseDate;
         SourceName = d.SourceName;
         SupplierId = d.SupplierId;
@@ -216,10 +252,11 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
             ExpenseLines.Add(new PurchaseExpenseLineEditViewModel { ExpenseType = e.ExpenseType, Amount = e.Amount, Notes = e.Notes });
         }
 
+        foreach (var existingLine in ItemLines) existingLine.RecalculationNeeded -= TriggerRecalculate;
         ItemLines.Clear();
         foreach (var l in d.ItemLines)
         {
-            ItemLines.Add(new PurchaseLineEditViewModel
+            var line = new PurchaseLineEditViewModel
             {
                 Id = l.Id,
                 ItemName = l.ItemName,
@@ -233,8 +270,9 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
                 AllocatedSalesTax = l.AllocatedSalesTax,
                 AllocatedExpenses = l.AllocatedExpenses,
                 FinalLineCostBasis = l.FinalLineCostBasis
-            });
-            foreach (var itemRef in l.CreatedItems) ItemLines[^1].CreatedItems.Add(itemRef);
+            };
+            foreach (var itemRef in l.CreatedItems) line.CreatedItems.Add(itemRef);
+            AttachLine(line);
         }
 
         MerchandiseSubtotal = d.MerchandiseSubtotal;
@@ -245,7 +283,7 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
         Difference = Math.Round(TotalPurchaseCost - AllocatedTotal, 2, MidpointRounding.AwayFromZero);
         PhysicalItemsToCreate = d.TotalItemCount;
         IsReadyToSave = Difference == 0;
-        ValidationSummaryText = BuildSummaryText();
+        ValidationErrors.Clear();
         OnPropertyChanged(nameof(CanManageDocuments));
     }
 
@@ -315,20 +353,25 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
 
     // ── Items grid ─────────────────────────────────────────────────────
     [RelayCommand]
-    private void AddItemLine() => ItemLines.Add(new PurchaseLineEditViewModel { Quantity = 1 });
+    private void AddItemLine() => AttachLine(new PurchaseLineEditViewModel { Quantity = 1 });
 
     [RelayCommand]
     private void DuplicateLine()
     {
         if (SelectedItemLine is null) return;
         var index = ItemLines.IndexOf(SelectedItemLine);
-        ItemLines.Insert(index + 1, SelectedItemLine.Clone());
+        var clone = SelectedItemLine.Clone();
+        clone.RecalculationNeeded += TriggerRecalculate;
+        ItemLines.Insert(index + 1, clone);
     }
 
     [RelayCommand]
     private void RemoveLine()
     {
-        if (SelectedItemLine is not null) ItemLines.Remove(SelectedItemLine);
+        if (SelectedItemLine is null) return;
+        SelectedItemLine.RecalculationNeeded -= TriggerRecalculate;
+        ItemLines.Remove(SelectedItemLine);
+        TriggerRecalculate();
     }
 
     [RelayCommand]
@@ -372,7 +415,7 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
         request = null!;
         error = null;
 
-        if (string.IsNullOrWhiteSpace(SourceName)) { error = "Укажите место покупки."; return false; }
+        if (string.IsNullOrWhiteSpace(SourceName)) { error = "Укажите тип места покупки."; return false; }
         if (ItemLines.Count == 0) { error = "Добавьте хотя бы один товар."; return false; }
 
         decimal? ParseOrNull(string? text) => string.IsNullOrWhiteSpace(text) ? null : (decimal.TryParse(text, out var v) ? v : (decimal?)null);
@@ -418,6 +461,39 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
             ExpenseLines = expenseLines
         };
         return true;
+    }
+
+    /// <summary>Debounces auto-recalculation so typing doesn't fire a
+    /// server call per keystroke. Suppressed while ApplyDetail/CreateAnother
+    /// populate fields programmatically (_suppressRecalc).</summary>
+    private void TriggerRecalculate()
+    {
+        if (_suppressRecalc) return;
+        _recalcCts?.Cancel();
+        _recalcCts = new CancellationTokenSource();
+        _ = DebouncedRecalculateAsync(_recalcCts.Token);
+    }
+
+    private async Task DebouncedRecalculateAsync(CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(400, token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+        if (!token.IsCancellationRequested) await RecalculateAsync();
+    }
+
+    /// <summary>Adds a line and subscribes to its RecalculationNeeded event
+    /// — every ItemLines.Add must go through this, not a bare .Add, so
+    /// editing a line's Quantity/Price live-updates the summary.</summary>
+    private void AttachLine(PurchaseLineEditViewModel line)
+    {
+        line.RecalculationNeeded += TriggerRecalculate;
+        ItemLines.Add(line);
     }
 
     [RelayCommand]
@@ -470,15 +546,8 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
         Difference = result.Difference;
         PhysicalItemsToCreate = result.PhysicalItemsToCreate;
         IsReadyToSave = result.IsReadyToSave;
-        ValidationSummaryText = BuildSummaryText(result.ValidationErrors);
-    }
-
-    private string BuildSummaryText(IReadOnlyList<string>? validationErrors = null)
-    {
-        var status = IsReadyToSave ? "Готово к сохранению" : "Расхождение — распределение не совпадает с итогом";
-        var text = $"Итог поступления: {TotalPurchaseCost:F2}\nРаспределено: {AllocatedTotal:F2}\nРазница: {Difference:F2}\nФизических товаров будет создано: {PhysicalItemsToCreate}\nСтатус: {status}";
-        if (validationErrors is { Count: > 0 }) text += "\n" + string.Join("\n", validationErrors);
-        return text;
+        ValidationErrors.Clear();
+        foreach (var error in result.ValidationErrors) ValidationErrors.Add(error);
     }
 
     [RelayCommand]
@@ -616,6 +685,28 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand]
+    private async Task DeleteDocumentAsync(DocumentDto document)
+    {
+        if (_purchaseId is not { } id) return;
+
+        var confirmVm = new ConfirmDialogViewModel("Удалить документ?",
+            $"«{document.OriginalFilename}» будет удалён.", confirmText: "Удалить");
+        var confirmed = await _dialogService.ShowAsync<ConfirmDialogViewModel, bool>(confirmVm);
+        if (!confirmed) return;
+
+        ErrorMessage = null;
+        try
+        {
+            await _apiClient.DeleteDocumentLinkAsync(document.Id, "Purchase", id);
+            Documents.Remove(document);
+        }
+        catch (ServerApiException ex)
+        {
+            ErrorMessage = ex.Error.Message;
+        }
+    }
+
     // ── Navigation ─────────────────────────────────────────────────────
     [RelayCommand]
     private void Back() => _navigation.ShowPurchaseList();
@@ -626,30 +717,39 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
     [RelayCommand]
     private void CreateAnother()
     {
-        _purchaseId = null;
-        IsNew = true;
-        ScreenTitle = "Новое поступление";
-        ShowSaveResult = false;
-        PurchaseDateValue = DateOnly.FromDateTime(DateTime.Today);
-        SourceName = string.Empty;
-        SupplierId = null;
-        SourceType = null;
-        PurchaseType = "TaxPaid";
-        PaymentMethod = null;
-        Comment = null;
-        PermitNumber = null;
-        PermitDate = null;
-        TaxExemptAmountText = string.Empty;
-        TaxableAmountText = string.Empty;
-        SalesTaxRateText = string.Empty;
-        SalesTaxAmountOverrideText = string.Empty;
-        ManualAdjustmentText = "0";
-        ExpenseLines.Clear();
-        ItemLines.Clear();
-        ItemLines.Add(new PurchaseLineEditViewModel { Quantity = 1 });
-        Documents.Clear();
-        ValidationSummaryText = "Нажмите «Пересчитать», чтобы увидеть распределение.";
-        OnPropertyChanged(nameof(CanManageDocuments));
+        _suppressRecalc = true;
+        try
+        {
+            _purchaseId = null;
+            IsNew = true;
+            ScreenTitle = "Новое поступление";
+            ShowSaveResult = false;
+            PurchaseDateValue = DateOnly.FromDateTime(DateTime.Today);
+            SourceName = string.Empty;
+            SupplierId = null;
+            SourceType = null;
+            PurchaseType = "TaxPaid";
+            PaymentMethod = null;
+            Comment = null;
+            PermitNumber = null;
+            PermitDate = null;
+            TaxExemptAmountText = string.Empty;
+            TaxableAmountText = string.Empty;
+            SalesTaxRateText = string.Empty;
+            SalesTaxAmountOverrideText = string.Empty;
+            ManualAdjustmentText = "0";
+            ExpenseLines.Clear();
+            foreach (var existingLine in ItemLines) existingLine.RecalculationNeeded -= TriggerRecalculate;
+            ItemLines.Clear();
+            AttachLine(new PurchaseLineEditViewModel { Quantity = 1 });
+            Documents.Clear();
+            ValidationErrors.Clear();
+            OnPropertyChanged(nameof(CanManageDocuments));
+        }
+        finally
+        {
+            _suppressRecalc = false;
+        }
     }
 }
 

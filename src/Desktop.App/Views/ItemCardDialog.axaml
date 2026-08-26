@@ -30,7 +30,10 @@
                         </StackPanel>
                         <StackPanel Spacing="4">
                             <TextBlock Text="Категория" FontSize="11" />
-                            <TextBox Text="{Binding CategoryName}" />
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <ComboBox ItemsSource="{Binding CategoryOptions}" SelectedItem="{Binding CategoryName}" Width="200" />
+                                <Button Content="+" Command="{Binding AddCategoryCommand}" ToolTip.Tip="Добавить новую категорию" />
+                            </StackPanel>
                         </StackPanel>
                         <StackPanel Spacing="4">
                             <TextBlock Text="Статус" FontSize="11" />
@@ -78,8 +81,8 @@
                                 <Button Content="{Binding PurchaseDateValue}" Command="{Binding OpenPurchaseDateCommand}" />
                             </StackPanel>
                             <StackPanel Spacing="4">
-                                <TextBlock Text="Место покупки" FontSize="11" />
-                                <Button Content="{Binding SourceName}" Command="{Binding OpenSupplierPickerCommand}" />
+                                <TextBlock Text="Тип места покупки" FontSize="11" />
+                                <Button Content="{Binding SourceName}" Command="{Binding OpenSupplierPickerCommand}" ToolTip.Tip="Нажмите, чтобы привязать конкретного поставщика" />
                             </StackPanel>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="16">

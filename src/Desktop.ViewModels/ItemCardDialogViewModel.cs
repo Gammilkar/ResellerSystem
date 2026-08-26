@@ -71,6 +71,12 @@ public sealed partial class ItemCardDialogViewModel : ViewModelBase
     [ObservableProperty] private string _createdInfo = "—";
     [ObservableProperty] private string _updatedInfo = "—";
 
+    /// <summary>Same ReferenceListValue("Category") list the Purchase
+    /// screen's Category combo reads from (PurchaseEditViewModel.
+    /// CategoryOptions) — a category added on either screen shows up on
+    /// both.</summary>
+    public ObservableCollection<string> CategoryOptions { get; } = new();
+
     // ── Закупка ───────────────────────────────────────────────────────
     private PurchaseDto? _purchase;
     [ObservableProperty] private string _sourceName = string.Empty;
@@ -226,8 +232,9 @@ public sealed partial class ItemCardDialogViewModel : ViewModelBase
         var receiptsTask = TryLoadListAsync(() => _apiClient.ListDocumentsForEntityAsync("ItemReceipt", _itemId), "Чеки", errors);
         var pdfsTask = TryLoadListAsync(() => _apiClient.ListDocumentsForEntityAsync("ItemPdf", _itemId), "PDF", errors);
         var otherDocsTask = TryLoadListAsync(() => _apiClient.ListDocumentsForEntityAsync("ItemOtherDocument", _itemId), "Другие документы", errors);
+        var categoryOptionsTask = TryLoadListAsync(() => _apiClient.ListReferenceValuesAsync(ReferenceListKeysMirror.Category), "Категории", errors);
 
-        await Task.WhenAll(purchaseTask, listingsTask, salesTask, returnsTask, expensesTask, photosTask, receiptsTask, pdfsTask, otherDocsTask);
+        await Task.WhenAll(purchaseTask, listingsTask, salesTask, returnsTask, expensesTask, photosTask, receiptsTask, pdfsTask, otherDocsTask, categoryOptionsTask);
 
         _purchase = purchaseTask.Result;
         if (_purchase is not null)
@@ -263,6 +270,9 @@ public sealed partial class ItemCardDialogViewModel : ViewModelBase
         foreach (var d in pdfsTask.Result) Pdfs.Add(d);
         OtherDocuments.Clear();
         foreach (var d in otherDocsTask.Result) OtherDocuments.Add(d);
+
+        CategoryOptions.Clear();
+        foreach (var c in categoryOptionsTask.Result) CategoryOptions.Add(c.Value);
 
         // Preserve the user's selection across a reload when possible;
         // otherwise fall back to the most recent listing/sale.
@@ -360,6 +370,30 @@ public sealed partial class ItemCardDialogViewModel : ViewModelBase
                 Notes = Notes
             });
             await LoadAsync();
+        }
+        catch (ServerApiException ex)
+        {
+            ErrorMessage = ex.Error.Message;
+        }
+    }
+
+    [RelayCommand]
+    private async Task AddCategoryAsync()
+    {
+        var dialogVm = new TextInputDialogViewModel("Новая категория", "Введите новое значение:");
+        var value = await _dialogService.ShowAsync<TextInputDialogViewModel, string>(dialogVm);
+        if (string.IsNullOrWhiteSpace(value)) return;
+
+        ErrorMessage = null;
+        try
+        {
+            var created = await _apiClient.CreateReferenceValueAsync(new CreateReferenceListValueRequest
+            {
+                ListKey = ReferenceListKeysMirror.Category,
+                Value = value
+            });
+            if (!CategoryOptions.Contains(created.Value)) CategoryOptions.Add(created.Value);
+            CategoryName = created.Value;
         }
         catch (ServerApiException ex)
         {

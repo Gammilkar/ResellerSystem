@@ -4,11 +4,26 @@
              xmlns:dto="using:ResellerSystem.Domain.Shared.Dto"
              x:Class="ResellerSystem.Desktop.App.Views.PurchaseEditView"
              x:DataType="vm:PurchaseEditViewModel">
+    <UserControl.Styles>
+        <Style Selector="TextBlock.warning">
+            <Setter Property="Foreground" Value="Red" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+        <Style Selector="TextBlock.ok">
+            <Setter Property="Foreground" Value="Green" />
+        </Style>
+        <Style Selector="Button.cell-link">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="2" />
+        </Style>
+    </UserControl.Styles>
     <DockPanel>
         <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*" Margin="0,0,0,12">
             <TextBlock Grid.Column="0" Text="{Binding ScreenTitle}" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,0" />
             <Button Grid.Column="1" Content="Back" Command="{Binding BackCommand}" Margin="0,0,8,0" />
-            <Button Grid.Column="2" Content="Пересчитать" Command="{Binding RecalculateCommand}" Margin="0,0,8,0" />
+            <Button Grid.Column="2" Content="Пересчитать" Command="{Binding RecalculateCommand}" Margin="0,0,8,0"
+                    ToolTip.Tip="Расчёт уже обновляется автоматически по мере ввода — эта кнопка нужна только чтобы пересчитать вручную." />
             <Button Grid.Column="3" Content="Сохранить" Command="{Binding SaveCommand}" IsEnabled="{Binding !IsSaving}" Margin="0,0,8,0" />
             <Button Grid.Column="4" Content="Сохранить с расхождением" Command="{Binding SaveAnywayCommand}"
                     IsEnabled="{Binding !IsSaving}" IsVisible="{Binding !IsReadyToSave}" />
@@ -30,27 +45,29 @@
 
         <ScrollViewer>
             <StackPanel Spacing="16" Margin="4">
-                <!-- ═══════════════════ Purchase Details ═══════════════════ -->
+                <!-- ═══════════════════ Блок 1: Данные покупки ═══════════════════ -->
                 <Border BorderBrush="Gray" BorderThickness="1" Padding="12">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Общие данные поступления" FontWeight="Bold" FontSize="14" />
+                        <TextBlock Text="Данные покупки" FontWeight="Bold" FontSize="14" />
                         <StackPanel Orientation="Horizontal" Spacing="16">
                             <StackPanel Spacing="4">
                                 <TextBlock Text="Дата покупки" FontSize="11" />
                                 <Button Content="{Binding PurchaseDateValue}" Command="{Binding OpenPurchaseDateCommand}" />
                             </StackPanel>
                             <StackPanel Spacing="4">
-                                <TextBlock Text="Место покупки" FontSize="11" />
+                                <TextBlock Text="Тип места покупки" FontSize="11" />
                                 <StackPanel Orientation="Horizontal" Spacing="4">
                                     <ComboBox ItemsSource="{Binding PurchaseSourceOptions}" SelectedItem="{Binding SourceName}" Width="160" />
-                                    <Button Content="+" Command="{Binding AddPurchaseSourceCommand}" />
+                                    <Button Content="+" Command="{Binding AddPurchaseSourceCommand}"
+                                            ToolTip.Tip="Добавить новый тип места покупки (например, Estate Sale, Garage Sale)" />
                                 </StackPanel>
                             </StackPanel>
                             <StackPanel Spacing="4">
-                                <TextBlock Text="Тип источника" FontSize="11" />
+                                <TextBlock Text="Место покупки" FontSize="11" />
                                 <StackPanel Orientation="Horizontal" Spacing="4">
                                     <TextBox Text="{Binding SourceType}" Width="140" Watermark="Введите вручную" />
-                                    <Button Content="Поставщик..." Command="{Binding OpenSupplierPickerCommand}" />
+                                    <Button Content="Поставщик..." Command="{Binding OpenSupplierPickerCommand}"
+                                            ToolTip.Tip="Выбрать существующего поставщика из базы или создать нового" />
                                 </StackPanel>
                             </StackPanel>
                         </StackPanel>
@@ -63,7 +80,7 @@
                                 <TextBlock Text="Способ оплаты" FontSize="11" />
                                 <StackPanel Orientation="Horizontal" Spacing="4">
                                     <ComboBox ItemsSource="{Binding PaymentMethodOptions}" SelectedItem="{Binding PaymentMethod}" Width="160" />
-                                    <Button Content="+" Command="{Binding AddPaymentMethodCommand}" />
+                                    <Button Content="+" Command="{Binding AddPaymentMethodCommand}" ToolTip.Tip="Добавить новый способ оплаты" />
                                 </StackPanel>
                             </StackPanel>
                         </StackPanel>
@@ -77,16 +94,12 @@
                                 <TextBlock Text="Reseller Permit" FontWeight="Bold" />
                                 <StackPanel Orientation="Horizontal" Spacing="16">
                                     <StackPanel Spacing="4">
-                                        <TextBlock Text="Permit Number" FontSize="11" />
+                                        <TextBlock Text="Номер разрешения" FontSize="11" />
                                         <TextBox Text="{Binding PermitNumber}" Width="140" />
                                     </StackPanel>
                                     <StackPanel Spacing="4">
-                                        <TextBlock Text="Permit Date" FontSize="11" />
+                                        <TextBlock Text="Дата разрешения" FontSize="11" />
                                         <Button Content="{Binding PermitDate, TargetNullValue='—'}" Command="{Binding OpenPermitDateCommand}" />
-                                    </StackPanel>
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Text="Tax Exempt Amount" FontSize="11" />
-                                        <TextBox Text="{Binding TaxExemptAmountText}" Width="120" />
                                     </StackPanel>
                                 </StackPanel>
                             </StackPanel>
@@ -94,50 +107,74 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ═══════════════════ Financial Summary ═══════════════════ -->
+                <!-- ═══════════════════ Блок 2: Стоимость и налоги ═══════════════════ -->
                 <Border BorderBrush="Gray" BorderThickness="1" Padding="12">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Финансовый блок" FontWeight="Bold" FontSize="14" />
+                        <TextBlock Text="Стоимость и налоги" FontWeight="Bold" FontSize="14" />
                         <StackPanel Orientation="Horizontal" Spacing="16">
                             <StackPanel Spacing="4">
-                                <TextBlock Text="Merchandise Subtotal" FontSize="11" />
+                                <TextBlock Text="Стоимость товаров" FontSize="11" />
                                 <TextBlock Text="{Binding MerchandiseSubtotal, StringFormat={}{0:C}}" FontWeight="Bold" VerticalAlignment="Center" />
                             </StackPanel>
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="Taxable Amount" FontSize="11" />
-                                <TextBox Text="{Binding TaxableAmountText}" Width="120" Watermark="= Subtotal" />
-                            </StackPanel>
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="Sales Tax Rate (%)" FontSize="11" />
+
+                            <!-- TaxPaid: редактируемая ставка + расчётный налог -->
+                            <StackPanel Spacing="4" IsVisible="{Binding ShowTaxPaidFields}">
+                                <TextBlock Text="Ставка налога (%)" FontSize="11" />
                                 <TextBox Text="{Binding SalesTaxRateText}" Width="100" />
                             </StackPanel>
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="Sales Tax Amount (override)" FontSize="11" />
-                                <TextBox Text="{Binding SalesTaxAmountOverrideText}" Width="140" Watermark="авто" />
-                            </StackPanel>
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="Sales Tax (эффективный)" FontSize="11" />
+                            <StackPanel Spacing="4" IsVisible="{Binding ShowTaxPaidFields}">
+                                <TextBlock Text="Sales Tax" FontSize="11" />
                                 <TextBlock Text="{Binding SalesTaxAmount, StringFormat={}{0:C}}" FontWeight="Bold" VerticalAlignment="Center" />
                             </StackPanel>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Spacing="16">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="Распределение Sales Tax" FontSize="11" />
-                                <ComboBox ItemsSource="{Binding AllocationMethodOptions}" SelectedItem="{Binding SalesTaxAllocationMethod}" Width="150" />
+
+                            <!-- ResellerPermit: без ставки, статическое освобождение от налога -->
+                            <StackPanel Spacing="4" IsVisible="{Binding ShowResellerPermitBlock}">
+                                <TextBlock Text="Reseller Permit" FontSize="11" />
+                                <TextBlock Text="Да — налог не взимается" VerticalAlignment="Center" />
                             </StackPanel>
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="Распределение расходов" FontSize="11" />
-                                <ComboBox ItemsSource="{Binding AllocationMethodOptions}" SelectedItem="{Binding ExpenseAllocationMethod}" Width="150" />
+                            <StackPanel Spacing="4" IsVisible="{Binding ShowResellerPermitBlock}">
+                                <TextBlock Text="Сумма без налога" FontSize="11" />
+                                <TextBox Text="{Binding TaxExemptAmountText}" Width="120" />
                             </StackPanel>
+
+                            <!-- NoTax: просто уведомление -->
+                            <StackPanel Spacing="4" IsVisible="{Binding ShowNoTaxNotice}">
+                                <TextBlock Text="Налог" FontSize="11" />
+                                <TextBlock Text="Не облагается (частная покупка)" VerticalAlignment="Center" />
+                            </StackPanel>
+
                             <StackPanel Spacing="4">
-                                <TextBlock Text="Manual Adjustment" FontSize="11" />
+                                <TextBlock Text="Корректировка" FontSize="11" />
                                 <TextBox Text="{Binding ManualAdjustmentText}" Width="120" />
                             </StackPanel>
                             <StackPanel Spacing="4">
-                                <TextBlock Text="Total Purchase Cost" FontSize="11" />
+                                <TextBlock Text="Итоговая стоимость закупки" FontSize="11" />
                                 <TextBlock Text="{Binding TotalPurchaseCost, StringFormat={}{0:C}}" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" />
                             </StackPanel>
                         </StackPanel>
+
+                        <Expander Header="Настройки распределения расходов" IsExpanded="False">
+                            <StackPanel Spacing="10" Margin="0,8,0,0">
+                                <StackPanel Orientation="Horizontal" Spacing="16">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Распределение Sales Tax" FontSize="11" />
+                                        <ComboBox ItemsSource="{Binding AllocationMethodOptions}" SelectedItem="{Binding SalesTaxAllocationMethod}" Width="150" />
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Распределение расходов" FontSize="11" />
+                                        <ComboBox ItemsSource="{Binding AllocationMethodOptions}" SelectedItem="{Binding ExpenseAllocationMethod}" Width="150" />
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Облагаемая сумма (переопределить)" FontSize="11" />
+                                        <TextBox Text="{Binding TaxableAmountText}" Width="140" Watermark="По умолчанию = стоимость товаров" />
+                                    </StackPanel>
+                                    <StackPanel Spacing="4" IsVisible="{Binding ShowTaxPaidFields}">
+                                        <TextBlock Text="Sales Tax (переопределить)" FontSize="11" />
+                                        <TextBox Text="{Binding SalesTaxAmountOverrideText}" Width="140" Watermark="авто" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </Expander>
 
                         <Separator />
                         <TextBlock Text="Дополнительные расходы" FontWeight="Bold" />
@@ -157,7 +194,7 @@
                         </ItemsControl>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <ComboBox ItemsSource="{Binding ExpenseTypeOptions}" SelectedItem="{Binding NewExpenseType}" Width="140" />
-                            <Button Content="+" Command="{Binding AddExpenseTypeCommand}" />
+                            <Button Content="+" Command="{Binding AddExpenseTypeCommand}" ToolTip.Tip="Добавить новый тип расхода" />
                             <TextBox Text="{Binding NewExpenseAmountText}" Width="100" Watermark="Сумма" />
                             <TextBox Text="{Binding NewExpenseNotes}" Width="180" Watermark="Комментарий" />
                             <Button Content="Добавить расход" Command="{Binding AddExpenseLineCommand}" />
@@ -165,24 +202,21 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ═══════════════════ Items in Purchase ═══════════════════ -->
+                <!-- ═══════════════════ Блок 3: Товары ═══════════════════ -->
                 <Border BorderBrush="Gray" BorderThickness="1" Padding="12">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Товары в поступлении" FontWeight="Bold" FontSize="14" />
+                        <TextBlock Text="Товары" FontWeight="Bold" FontSize="14" />
                         <DataGrid ItemsSource="{Binding ItemLines}" SelectedItem="{Binding SelectedItemLine}"
-                                  AutoGenerateColumns="False" IsReadOnly="False" GridLinesVisibility="All" Height="260">
+                                  AutoGenerateColumns="False" IsReadOnly="False" GridLinesVisibility="All" Height="280"
+                                  RowDetailsVisibilityMode="VisibleWhenSelected">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Наименование" Binding="{Binding ItemName}" Width="160" />
                                 <DataGridTextColumn Header="Категория" Binding="{Binding CategoryName}" Width="120" />
-                                <DataGridTextColumn Header="Кол-во" Binding="{Binding Quantity}" Width="70" />
-                                <DataGridTextColumn Header="Цена за ед." Binding="{Binding UnitPurchaseCost, StringFormat={}{0:0.00}}" Width="100" />
-                                <DataGridTextColumn Header="Line Cost" Binding="{Binding LinePurchaseCost, StringFormat={}{0:C}}" Width="100" IsReadOnly="True" />
-                                <DataGridTextColumn Header="Alloc. Tax" Binding="{Binding AllocatedSalesTax, StringFormat={}{0:C}}" Width="90" IsReadOnly="True" />
-                                <DataGridTextColumn Header="Alloc. Expenses" Binding="{Binding AllocatedExpenses, StringFormat={}{0:C}}" Width="100" IsReadOnly="True" />
-                                <DataGridTextColumn Header="Final Cost Basis" Binding="{Binding FinalLineCostBasis, StringFormat={}{0:C}}" Width="110" IsReadOnly="True" />
-                                <DataGridTextColumn Header="Manual Tax" Binding="{Binding ManualAllocatedSalesTaxText}" Width="90" />
-                                <DataGridTextColumn Header="Manual Exp." Binding="{Binding ManualAllocatedExpensesText}" Width="90" />
-                                <DataGridTemplateColumn Header="Item #" Width="140">
+                                <DataGridTextColumn Header="Количество" Binding="{Binding Quantity}" Width="80" />
+                                <DataGridTextColumn Header="Цена за единицу" Binding="{Binding UnitPurchaseCost, StringFormat={}{0:0.00}}" Width="110" />
+                                <DataGridTextColumn Header="Сумма" Binding="{Binding LinePurchaseCost, StringFormat={}{0:C}}" Width="100" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Итоговая себестоимость за единицу" Binding="{Binding FinalLineCostBasis, StringFormat={}{0:C}}" Width="140" IsReadOnly="True" />
+                                <DataGridTemplateColumn Header="Созданные товары" Width="140">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate x:DataType="vm:PurchaseLineEditViewModel">
                                             <ItemsControl ItemsSource="{Binding CreatedItems}">
@@ -195,7 +229,8 @@
                                                     <DataTemplate x:DataType="dto:PurchaseLineItemRefDto">
                                                         <Button Classes="cell-link" Margin="0,0,4,0"
                                                                 Command="{Binding $parent[UserControl].((vm:PurchaseEditViewModel)DataContext).OpenItemCardCommand}"
-                                                                CommandParameter="{Binding}">
+                                                                CommandParameter="{Binding}"
+                                                                ToolTip.Tip="Открыть карточку товара">
                                                             <TextBlock Text="{Binding ItemNumber, StringFormat='#{0}'}" />
                                                         </Button>
                                                     </DataTemplate>
@@ -206,13 +241,33 @@
                                 </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="Заметки" Binding="{Binding Notes}" Width="140" />
                             </DataGrid.Columns>
-                            <DataGrid.Styles>
-                                <Style Selector="Button.cell-link">
-                                    <Setter Property="Background" Value="Transparent" />
-                                    <Setter Property="BorderThickness" Value="0" />
-                                    <Setter Property="Padding" Value="2" />
-                                </Style>
-                            </DataGrid.Styles>
+                            <DataGrid.RowDetailsTemplate>
+                                <DataTemplate x:DataType="vm:PurchaseLineEditViewModel">
+                                    <Border Background="#11000000" Padding="10,6" Margin="0,2">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="Детали распределения" FontWeight="Bold" FontSize="11" />
+                                            <StackPanel Orientation="Horizontal" Spacing="16">
+                                                <StackPanel Spacing="2">
+                                                    <TextBlock Text="Налог (авто)" FontSize="10" Foreground="Gray" />
+                                                    <TextBlock Text="{Binding AllocatedSalesTax, StringFormat={}{0:C}}" />
+                                                </StackPanel>
+                                                <StackPanel Spacing="2">
+                                                    <TextBlock Text="Налог (вручную)" FontSize="10" Foreground="Gray" />
+                                                    <TextBox Text="{Binding ManualAllocatedSalesTaxText}" Width="100" Watermark="авто" />
+                                                </StackPanel>
+                                                <StackPanel Spacing="2">
+                                                    <TextBlock Text="Расходы (авто)" FontSize="10" Foreground="Gray" />
+                                                    <TextBlock Text="{Binding AllocatedExpenses, StringFormat={}{0:C}}" />
+                                                </StackPanel>
+                                                <StackPanel Spacing="2">
+                                                    <TextBlock Text="Расходы (вручную)" FontSize="10" Foreground="Gray" />
+                                                    <TextBox Text="{Binding ManualAllocatedExpensesText}" Width="100" Watermark="авто" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGrid.RowDetailsTemplate>
                         </DataGrid>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <Button Content="Добавить товар" Command="{Binding AddItemLineCommand}" />
@@ -222,35 +277,74 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ═══════════════════ Validation Summary ═══════════════════ -->
+                <!-- ═══════════════════ Блок 4: Документы и итог ═══════════════════ -->
                 <Border BorderBrush="Gray" BorderThickness="1" Padding="12">
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Проверка перед сохранением" FontWeight="Bold" FontSize="14" />
-                        <TextBlock Text="{Binding ValidationSummaryText}" TextWrapping="Wrap" FontFamily="Consolas,monospace" />
-                    </StackPanel>
-                </Border>
+                    <StackPanel Spacing="12">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Итог" FontWeight="Bold" FontSize="14" />
+                            <Grid ColumnDefinitions="220,120" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                                <Grid.Styles>
+                                    <Style Selector="TextBlock">
+                                        <Setter Property="Margin" Value="0,2" />
+                                    </Style>
+                                </Grid.Styles>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Стоимость товаров" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding MerchandiseSubtotal, StringFormat={}{0:C}}" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Sales Tax" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SalesTaxAmount, StringFormat={}{0:C}}" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Доп. расходы" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding TotalExpenses, StringFormat={}{0:C}}" />
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Корректировка" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ManualAdjustmentText}" />
+                                <Separator Grid.Row="4" Grid.ColumnSpan="2" Margin="0,4" />
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Итоговая стоимость закупки" FontWeight="Bold" FontSize="14" />
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding TotalPurchaseCost, StringFormat={}{0:C}}" FontWeight="Bold" FontSize="14" />
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Распределено по товарам" />
+                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding AllocatedTotal, StringFormat={}{0:C}}" />
+                                <TextBlock Grid.Row="7" Grid.Column="0" Text="Разница" />
+                                <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding Difference, StringFormat={}{0:C}}"
+                                           Classes.warning="{Binding !IsReadyToSave}" Classes.ok="{Binding IsReadyToSave}" />
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                                <TextBlock Text="{Binding PhysicalItemsToCreate, StringFormat='Товаров будет создано: {0}'}" />
+                                <TextBlock Text="Готово к сохранению" Classes="ok" IsVisible="{Binding IsReadyToSave}" />
+                                <TextBlock Text="Расхождение — распределение не совпадает с итогом" Classes="warning" IsVisible="{Binding !IsReadyToSave}" />
+                            </StackPanel>
+                            <ItemsControl ItemsSource="{Binding ValidationErrors}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:CompileBindings="False">
+                                        <TextBlock Text="{Binding}" Classes="warning" TextWrapping="Wrap" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
 
-                <!-- ═══════════════════ Documents ═══════════════════ -->
-                <Border BorderBrush="Gray" BorderThickness="1" Padding="12">
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="Документы" FontWeight="Bold" FontSize="14" />
-                        <TextBlock Text="Сохраните поступление, чтобы прикреплять файлы." FontSize="11" Foreground="Gray"
-                                   IsVisible="{Binding !CanManageDocuments}" />
-                        <ItemsControl ItemsSource="{Binding Documents}" IsVisible="{Binding CanManageDocuments}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="dto:DocumentDto">
-                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
-                                        <TextBlock Text="{Binding OriginalFilename}" Width="260" />
-                                        <TextBlock Text="{Binding SizeBytes, StringFormat='{}{0} байт'}" Foreground="Gray" Width="90" />
-                                        <Button Content="Открыть"
-                                                Command="{Binding $parent[UserControl].((vm:PurchaseEditViewModel)DataContext).OpenDocumentCommand}"
-                                                CommandParameter="{Binding}" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        <Button Content="Добавить файл" Command="{Binding UploadDocumentCommand}"
-                                IsEnabled="{Binding CanManageDocuments}" HorizontalAlignment="Left" />
+                        <Separator />
+
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Документы" FontWeight="Bold" FontSize="14" />
+                            <TextBlock Text="Сохраните поступление, чтобы прикреплять файлы." FontSize="11" Foreground="Gray"
+                                       IsVisible="{Binding !CanManageDocuments}" />
+                            <ItemsControl ItemsSource="{Binding Documents}" IsVisible="{Binding CanManageDocuments}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="dto:DocumentDto">
+                                        <Grid ColumnDefinitions="220,100,90,Auto,Auto" Margin="0,2">
+                                            <TextBlock Grid.Column="0" Text="{Binding OriginalFilename}" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="1" Text="{Binding MimeType}" Foreground="Gray" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="2" Text="{Binding SizeBytes, StringFormat='{}{0:N0} байт'}" Foreground="Gray" VerticalAlignment="Center" />
+                                            <Button Grid.Column="3" Content="Открыть"
+                                                    Command="{Binding $parent[UserControl].((vm:PurchaseEditViewModel)DataContext).OpenDocumentCommand}"
+                                                    CommandParameter="{Binding}" />
+                                            <Button Grid.Column="4" Content="Удалить" Foreground="Red"
+                                                    Command="{Binding $parent[UserControl].((vm:PurchaseEditViewModel)DataContext).DeleteDocumentCommand}"
+                                                    CommandParameter="{Binding}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Button Content="Добавить файл" Command="{Binding UploadDocumentCommand}"
+                                    IsEnabled="{Binding CanManageDocuments}" HorizontalAlignment="Left" />
+                        </StackPanel>
                     </StackPanel>
                 </Border>
             </StackPanel>
