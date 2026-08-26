@@ -46,9 +46,22 @@ public sealed partial class InventoryViewModel : ViewModelBase
         _filePickerService = filePickerService;
 
         LoadColumnSettings();
+        SelectedRows.CollectionChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(HasSelection));
+            OnPropertyChanged(nameof(DeleteSelectedLabel));
+        };
     }
 
     public ObservableCollection<InventoryTableRowDto> TableRows { get; } = new();
+
+    /// <summary>Kept in sync by InventoryView's code-behind (DataGrid
+    /// SelectionChanged) since the grid's own multi-selection isn't
+    /// something a ViewModel can observe directly.</summary>
+    public ObservableCollection<InventoryTableRowDto> SelectedRows { get; } = new();
+
+    public bool HasSelection => SelectedRows.Count > 0;
+    public string DeleteSelectedLabel => SelectedRows.Count > 0 ? $"Удалить выбранные ({SelectedRows.Count})" : "Удалить выбранные";
 
     /// <summary>Column-key → pixel width, kept in sync live by
     /// InventoryView's code-behind (which listens to each
@@ -110,6 +123,37 @@ public sealed partial class InventoryViewModel : ViewModelBase
         {
             IsLoading = false;
         }
+    }
+
+    [RelayCommand]
+    private async Task DeleteSelectedAsync()
+    {
+        if (SelectedRows.Count == 0) return;
+
+        var confirmVm = new ConfirmDialogViewModel(
+            "Удалить выбранные товары?",
+            $"Будет удалено товаров: {SelectedRows.Count}. Это действие нельзя отменить из интерфейса.",
+            confirmText: "Удалить");
+        var confirmed = await _dialogService.ShowAsync<ConfirmDialogViewModel, bool>(confirmVm);
+        if (!confirmed) return;
+
+        ErrorMessage = null;
+        var errors = new List<string>();
+        foreach (var row in SelectedRows.ToList())
+        {
+            try
+            {
+                await _apiClient.DeleteItemAsync(row.ItemId);
+            }
+            catch (ServerApiException ex)
+            {
+                errors.Add($"{row.Name}: {ex.Error.Message}");
+            }
+        }
+        if (errors.Count > 0) ErrorMessage = string.Join(" | ", errors);
+
+        SelectedRows.Clear();
+        await LoadAsync();
     }
 
     [RelayCommand]

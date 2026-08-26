@@ -59,6 +59,21 @@ public partial class InventoryView : UserControl
         }
     }
 
+    // DataGrid's multi-selection (SelectionMode="Extended") has no
+    // ViewModel-observable equivalent, so mirror it into
+    // InventoryViewModel.SelectedRows here — SelectedItems is the
+    // authoritative current selection at the time this fires, so a full
+    // clear-and-rebuild is simplest and always correct.
+    private void MainGrid_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (DataContext is not InventoryViewModel vm) return;
+        vm.SelectedRows.Clear();
+        foreach (var item in MainGrid.SelectedItems)
+        {
+            if (item is InventoryTableRowDto row) vm.SelectedRows.Add(row);
+        }
+    }
+
     // ComboBox.SelectedValue's binding is one-way (see InventoryView.axaml —
     // InventoryTableRowDto's properties are init-only, so nothing can bind
     // back into them), so committing an edit goes through SelectionChanged

@@ -5,12 +5,14 @@
              x:Class="ResellerSystem.Desktop.App.Views.InventoryView"
              x:DataType="vm:InventoryViewModel">
     <DockPanel>
-        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*" Margin="0,0,0,12">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*" Margin="0,0,0,12">
             <TextBlock Grid.Column="0" Text="Inventory" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,0" />
             <Button Grid.Column="1" Content="Back" Command="{Binding BackCommand}" Margin="0,0,8,0" />
             <Button Grid.Column="2" Content="Refresh" Command="{Binding LoadCommand}" Margin="0,0,8,0" />
             <Button Grid.Column="3" Content="New Purchase" Command="{Binding ToggleNewPurchaseFormCommand}" Margin="0,0,8,0" />
-            <Button Grid.Column="4" Content="Table Settings" Command="{Binding ToggleSettingsPanelCommand}" />
+            <Button Grid.Column="4" Content="Table Settings" Command="{Binding ToggleSettingsPanelCommand}" Margin="0,0,8,0" />
+            <Button Grid.Column="5" Content="{Binding DeleteSelectedLabel}" Command="{Binding DeleteSelectedCommand}"
+                    IsEnabled="{Binding HasSelection}" Foreground="Red" />
         </Grid>
 
         <TextBlock DockPanel.Dock="Top" Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap"
@@ -89,6 +91,8 @@
                   CanUserReorderColumns="True"
                   CanUserSortColumns="True"
                   IsReadOnly="True"
+                  SelectionMode="Extended"
+                  SelectionChanged="MainGrid_SelectionChanged"
                   GridLinesVisibility="All"
                   FontSize="{Binding DataFontSize}">
             <DataGrid.Styles>
