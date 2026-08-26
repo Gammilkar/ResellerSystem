@@ -1,4 +1,6 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using ResellerSystem.Domain.Shared.Dto;
 
 namespace ResellerSystem.Desktop.ViewModels;
 
@@ -24,7 +26,10 @@ public sealed partial class PurchaseLineEditViewModel : ObservableObject
     [ObservableProperty] private decimal _allocatedSalesTax;
     [ObservableProperty] private decimal _allocatedExpenses;
     [ObservableProperty] private decimal _finalLineCostBasis;
-    [ObservableProperty] private string _itemNumbersText = string.Empty;
+
+    /// <summary>The physical Items this line has created — clickable in the
+    /// UI to open the full Item Card dialog. Empty for a not-yet-saved line.</summary>
+    public ObservableCollection<PurchaseLineItemRefDto> CreatedItems { get; } = new();
 
     public PurchaseLineEditViewModel Clone() => new()
     {
@@ -33,7 +38,7 @@ public sealed partial class PurchaseLineEditViewModel : ObservableObject
         Quantity = Quantity,
         UnitPurchaseCost = UnitPurchaseCost,
         Notes = Notes
-        // Id, allocation results, and ItemNumbers deliberately not copied —
+        // Id, allocation results, and CreatedItems deliberately not copied —
         // Duplicate Line makes a new, not-yet-saved line.
     };
 }

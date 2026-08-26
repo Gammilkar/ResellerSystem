@@ -71,7 +71,7 @@
                     <CheckBox Content="Статус" IsChecked="{Binding ShowStatusColumn}" Margin="0,0,16,4" />
                     <CheckBox Content="Дата покупки" IsChecked="{Binding ShowPurchaseDateColumn}" Margin="0,0,16,4" />
                     <CheckBox Content="Место покупки" IsChecked="{Binding ShowPurchaseSourceColumn}" Margin="0,0,16,4" />
-                    <CheckBox Content="Тип закупки" IsChecked="{Binding ShowPurchaseTypeColumn}" Margin="0,0,16,4" />
+                    <CheckBox Content="Тип поступления" IsChecked="{Binding ShowPurchaseTypeColumn}" Margin="0,0,16,4" />
                     <CheckBox Content="Итоговая себестоимость" IsChecked="{Binding ShowCostBasisColumn}" Margin="0,0,16,4" />
                     <CheckBox Content="Дата публикации" IsChecked="{Binding ShowListingDateColumn}" Margin="0,0,16,4" />
                     <CheckBox Content="Marketplace" IsChecked="{Binding ShowMarketplaceColumn}" Margin="0,0,16,4" />
@@ -229,7 +229,7 @@
                                         IsVisible="{Binding ShowPurchaseTypeColumn}">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
-                            <TextBlock Text="Тип закупки" TextWrapping="Wrap" FontWeight="Bold" Foreground="Black"
+                            <TextBlock Text="Тип поступления" TextWrapping="Wrap" FontWeight="Bold" Foreground="Black"
                                        FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).HeaderFontSize}"
                                        HorizontalAlignment="Stretch" />
                         </DataTemplate>

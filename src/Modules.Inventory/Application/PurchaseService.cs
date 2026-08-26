@@ -407,7 +407,9 @@ public sealed class PurchaseService : IPurchaseService
         var itemsByLine = p.Items
             .Where(i => i.PurchaseItemLineId is not null)
             .GroupBy(i => i.PurchaseItemLineId!.Value)
-            .ToDictionary(g => g.Key, g => (IReadOnlyList<long>)g.OrderBy(i => i.ItemNumber).Select(i => i.ItemNumber).ToList());
+            .ToDictionary(g => g.Key, g => (IReadOnlyList<PurchaseLineItemRefDto>)g.OrderBy(i => i.ItemNumber)
+                .Select(i => new PurchaseLineItemRefDto { Id = i.Id, ItemNumber = i.ItemNumber })
+                .ToList());
 
         var lineDtos = p.ItemLines
             .OrderBy(l => l.LineNumber)
@@ -426,7 +428,7 @@ public sealed class PurchaseService : IPurchaseService
                 ManualAllocatedExpenses = l.ManualAllocatedExpenses,
                 FinalLineCostBasis = l.FinalLineCostBasis,
                 Notes = l.Notes,
-                ItemNumbers = itemsByLine.TryGetValue(l.Id, out var numbers) ? numbers : Array.Empty<long>()
+                CreatedItems = itemsByLine.TryGetValue(l.Id, out var refs) ? refs : Array.Empty<PurchaseLineItemRefDto>()
             })
             .ToList();
 

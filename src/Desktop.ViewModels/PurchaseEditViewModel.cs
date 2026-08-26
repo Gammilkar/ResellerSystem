@@ -53,7 +53,7 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
     {
         _purchaseId = purchaseId;
         IsNew = purchaseId is null;
-        ScreenTitle = IsNew ? "Новое поступление" : "Редактирование закупки";
+        ScreenTitle = IsNew ? "Новое поступление" : "Редактирование поступления";
         _ = LoadAsync();
     }
 
@@ -67,6 +67,7 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
     [ObservableProperty] private DateOnly _purchaseDateValue = DateOnly.FromDateTime(DateTime.Today);
     [ObservableProperty] private string _sourceName = string.Empty;
     [ObservableProperty] private string? _sourceType;
+    [ObservableProperty] private Guid? _supplierId;
     [ObservableProperty] private string _purchaseType = "TaxPaid";
     [ObservableProperty] private string? _paymentMethod;
     [ObservableProperty] private string? _comment;
@@ -194,6 +195,7 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
     {
         PurchaseDateValue = d.PurchaseDate;
         SourceName = d.SourceName;
+        SupplierId = d.SupplierId;
         SourceType = d.SourceType;
         PurchaseType = d.PurchaseType;
         PaymentMethod = d.PaymentMethod;
@@ -230,9 +232,9 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
                 LinePurchaseCost = l.LinePurchaseCost,
                 AllocatedSalesTax = l.AllocatedSalesTax,
                 AllocatedExpenses = l.AllocatedExpenses,
-                FinalLineCostBasis = l.FinalLineCostBasis,
-                ItemNumbersText = string.Join(", ", l.ItemNumbers)
+                FinalLineCostBasis = l.FinalLineCostBasis
             });
+            foreach (var itemRef in l.CreatedItems) ItemLines[^1].CreatedItems.Add(itemRef);
         }
 
         MerchandiseSubtotal = d.MerchandiseSubtotal;
@@ -256,6 +258,17 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task OpenSupplierPickerAsync()
+    {
+        var pickerVm = new SupplierPickerViewModel(_apiClient, _dialogService);
+        var chosen = await _dialogService.ShowAsync<SupplierPickerViewModel, SupplierDto>(pickerVm);
+        if (chosen is null) return;
+
+        SupplierId = chosen.Id;
+        SourceType = chosen.Name;
+    }
+
+    [RelayCommand]
     private async Task OpenPermitDateAsync()
     {
         var vm = new DatePickerDialogViewModel("Permit Date", PermitDate);
@@ -265,7 +278,7 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
 
     // ── Reference list "+ Add" ────────────────────────────────────────
     [RelayCommand]
-    private Task AddPurchaseSourceAsync() => AddReferenceValueAsync(ReferenceListKeysMirror.PurchaseSource, "Новый источник закупки", PurchaseSourceOptions, v => SourceName = v);
+    private Task AddPurchaseSourceAsync() => AddReferenceValueAsync(ReferenceListKeysMirror.PurchaseSource, "Новый источник поступления", PurchaseSourceOptions, v => SourceName = v);
 
     [RelayCommand]
     private Task AddPaymentMethodAsync() => AddReferenceValueAsync(ReferenceListKeysMirror.PaymentMethod, "Новый способ оплаты", PaymentMethodOptions, v => PaymentMethod = v);
@@ -319,6 +332,18 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task OpenItemCardAsync(PurchaseLineItemRefDto itemRef)
+    {
+        var dialogVm = new ItemCardDialogViewModel(itemRef.Id, _apiClient, _dialogService, _filePickerService);
+        await _dialogService.ShowAsync<ItemCardDialogViewModel, bool>(dialogVm);
+        if (_purchaseId is { } id)
+        {
+            var detail = await _apiClient.GetPurchaseFullAsync(id);
+            ApplyDetail(detail);
+        }
+    }
+
+    [RelayCommand]
     private void AddExpenseLine()
     {
         if (!decimal.TryParse(NewExpenseAmountText, out var amount))
@@ -368,6 +393,7 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
         {
             PurchaseDate = PurchaseDateValue,
             SourceName = SourceName,
+            SupplierId = SupplierId,
             SourceType = SourceType,
             PurchaseType = PurchaseType,
             PaymentMethod = PaymentMethod,
@@ -443,7 +469,7 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
     private string BuildSummaryText(IReadOnlyList<string>? validationErrors = null)
     {
         var status = IsReadyToSave ? "Готово к сохранению" : "Расхождение — распределение не совпадает с итогом";
-        var text = $"Итог закупки: {TotalPurchaseCost:F2}\nРаспределено: {AllocatedTotal:F2}\nРазница: {Difference:F2}\nФизических товаров будет создано: {PhysicalItemsToCreate}\nСтатус: {status}";
+        var text = $"Итог поступления: {TotalPurchaseCost:F2}\nРаспределено: {AllocatedTotal:F2}\nРазница: {Difference:F2}\nФизических товаров будет создано: {PhysicalItemsToCreate}\nСтатус: {status}";
         if (validationErrors is { Count: > 0 }) text += "\n" + string.Join("\n", validationErrors);
         return text;
     }
@@ -473,6 +499,7 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
                 {
                     PurchaseDate = request.PurchaseDate,
                     SourceName = request.SourceName,
+                    SupplierId = request.SupplierId,
                     SourceType = request.SourceType,
                     PurchaseType = request.PurchaseType,
                     PaymentMethod = request.PaymentMethod,
@@ -498,6 +525,7 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
                 {
                     PurchaseDate = request.PurchaseDate,
                     SourceName = request.SourceName,
+                    SupplierId = request.SupplierId,
                     SourceType = request.SourceType,
                     PurchaseType = request.PurchaseType,
                     PaymentMethod = request.PaymentMethod,
@@ -520,11 +548,11 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
 
             _purchaseId = result.Id;
             IsNew = false;
-            ScreenTitle = "Редактирование закупки";
+            ScreenTitle = "Редактирование поступления";
             ApplyDetail(result);
 
-            var itemNumbers = result.ItemLines.SelectMany(l => l.ItemNumbers).OrderBy(n => n).ToList();
-            SaveResultText = $"Закупка сохранена. Товаров создано: {itemNumbers.Count}\n" +
+            var itemNumbers = result.ItemLines.SelectMany(l => l.CreatedItems).Select(r => r.ItemNumber).OrderBy(n => n).ToList();
+            SaveResultText = $"Поступление сохранено. Товаров создано: {itemNumbers.Count}\n" +
                               string.Join("\n", itemNumbers.Select(n => $"#{n}"));
             ShowSaveResult = true;
         }
@@ -597,6 +625,7 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
         ShowSaveResult = false;
         PurchaseDateValue = DateOnly.FromDateTime(DateTime.Today);
         SourceName = string.Empty;
+        SupplierId = null;
         SourceType = null;
         PurchaseType = "TaxPaid";
         PaymentMethod = null;

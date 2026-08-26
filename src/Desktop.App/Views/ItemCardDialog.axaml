@@ -69,7 +69,7 @@
             </TabItem>
 
             <!-- ═══════════════════════════ Закупка ═══════════════════════════ -->
-            <TabItem Header="Закупка">
+            <TabItem Header="Поступление">
                 <ScrollViewer>
                     <StackPanel Spacing="10" Margin="4">
                         <StackPanel Orientation="Horizontal" Spacing="16">
@@ -84,7 +84,7 @@
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="16">
                             <StackPanel Spacing="4">
-                                <TextBlock Text="Тип закупки" FontSize="11" />
+                                <TextBlock Text="Тип поступления" FontSize="11" />
                                 <ComboBox ItemsSource="{Binding PurchaseTypeOptionsList}"
                                           SelectedValueBinding="{Binding Code}"
                                           SelectedValue="{Binding EditPurchaseType}"
@@ -107,14 +107,14 @@
                                 <TextBox Text="{Binding EditSalesTaxRateText}" Width="100" />
                             </StackPanel>
                             <StackPanel Spacing="4">
-                                <TextBlock Text="Итого закупка" FontSize="11" />
+                                <TextBlock Text="Итого по поступлению" FontSize="11" />
                                 <TextBlock Text="{Binding TotalAmount, StringFormat={}{0:C}}" VerticalAlignment="Center" Margin="4,4,0,4" />
                             </StackPanel>
                         </StackPanel>
                         <Button Content="Сохранить" Command="{Binding SavePurchaseCommand}" HorizontalAlignment="Left" />
 
                         <Separator Margin="0,8,0,0" />
-                        <TextBlock Text="Дополнительные расходы закупки" FontWeight="Bold" />
+                        <TextBlock Text="Дополнительные расходы поступления" FontWeight="Bold" />
                         <ItemsControl ItemsSource="{Binding Expenses}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="dto:ExpenseDto">

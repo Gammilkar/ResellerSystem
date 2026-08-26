@@ -32,9 +32,16 @@ public sealed class PurchaseItemLineDto
     public required decimal FinalLineCostBasis { get; init; }
     public string? Notes { get; init; }
 
-    /// <summary>The physical Item numbers this line has created — empty
-    /// for a not-yet-saved preview line.</summary>
-    public IReadOnlyList<long> ItemNumbers { get; init; } = Array.Empty<long>();
+    /// <summary>The physical Items this line has created — empty for a
+    /// not-yet-saved preview line. Carries Id (not just ItemNumber) so the
+    /// client can open the full Item Card dialog for each one.</summary>
+    public IReadOnlyList<PurchaseLineItemRefDto> CreatedItems { get; init; } = Array.Empty<PurchaseLineItemRefDto>();
+}
+
+public sealed class PurchaseLineItemRefDto
+{
+    public required Guid Id { get; init; }
+    public required long ItemNumber { get; init; }
 }
 
 /// <summary>Client → server shape for one line, used both when creating a

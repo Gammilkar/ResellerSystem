@@ -5,11 +5,13 @@
              x:Class="ResellerSystem.Desktop.App.Views.PurchaseListView"
              x:DataType="vm:PurchaseListViewModel">
     <DockPanel>
-        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,Auto,*" Margin="0,0,0,12">
-            <TextBlock Grid.Column="0" Text="Закупки" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,0" />
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto" Margin="0,0,0,12">
+            <TextBlock Grid.Column="0" Text="Поступления" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,0" />
             <Button Grid.Column="1" Content="Back" Command="{Binding BackCommand}" Margin="0,0,8,0" />
             <Button Grid.Column="2" Content="Обновить" Command="{Binding LoadCommand}" Margin="0,0,8,0" />
             <Button Grid.Column="3" Content="Новое поступление" Command="{Binding CreateNewCommand}" />
+            <Button Grid.Column="5" Content="{Binding DeleteSelectedLabel}" Command="{Binding DeleteSelectedCommand}"
+                    IsEnabled="{Binding HasSelection}" Foreground="Red" />
         </Grid>
 
         <TextBlock DockPanel.Dock="Top" Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap"
@@ -20,7 +22,7 @@
                 <TextBlock Text="Фильтры" FontWeight="Bold" />
                 <WrapPanel>
                     <TextBox Text="{Binding FilterSourceName}" Watermark="Источник" Width="150" Margin="0,0,8,4" />
-                    <TextBox Text="{Binding FilterPurchaseType}" Watermark="Тип закупки" Width="130" Margin="0,0,8,4" />
+                    <TextBox Text="{Binding FilterPurchaseType}" Watermark="Тип поступления" Width="130" Margin="0,0,8,4" />
                     <TextBox Text="{Binding FilterPaymentMethod}" Watermark="Способ оплаты" Width="140" Margin="0,0,8,4" />
                     <TextBox Text="{Binding FilterSearch}" Watermark="Поиск" Width="160" Margin="0,0,8,4" />
                 </WrapPanel>
@@ -31,9 +33,18 @@
             </StackPanel>
         </Border>
 
-        <DataGrid ItemsSource="{Binding Purchases}" AutoGenerateColumns="False" IsReadOnly="True"
-                  GridLinesVisibility="All" CanUserSortColumns="True">
+        <DataGrid x:Name="MainGrid" ItemsSource="{Binding Purchases}" AutoGenerateColumns="False" IsReadOnly="True"
+                  GridLinesVisibility="All" CanUserSortColumns="True"
+                  SelectionMode="Extended" SelectionChanged="MainGrid_SelectionChanged">
             <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Действия" Width="90">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:PurchaseListRowDto">
+                            <Button Content="Открыть" Command="{Binding $parent[UserControl].((vm:PurchaseListViewModel)DataContext).OpenPurchaseCommand}"
+                                    CommandParameter="{Binding}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Дата" Width="100">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:PurchaseListRowDto">
@@ -45,7 +56,7 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Источник" Binding="{Binding SourceName}" Width="160" />
-                <DataGridTextColumn Header="Тип закупки" Binding="{Binding PurchaseType}" Width="110" />
+                <DataGridTextColumn Header="Тип поступления" Binding="{Binding PurchaseType}" Width="110" />
                 <DataGridTextColumn Header="Subtotal" Binding="{Binding MerchandiseSubtotal, StringFormat={}{0:C}}" Width="100" />
                 <DataGridTextColumn Header="Sales Tax" Binding="{Binding SalesTaxAmount, StringFormat={}{0:C}}" Width="100" />
                 <DataGridTextColumn Header="Расходы" Binding="{Binding TotalExpenses, StringFormat={}{0:C}}" Width="100" />

@@ -23,7 +23,7 @@
                 <TextBlock Text="{Binding SaveResultText}" TextWrapping="Wrap" FontWeight="Bold" />
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <Button Content="Открыть Inventory" Command="{Binding OpenInventoryCommand}" />
-                    <Button Content="Создать ещё одну закупку" Command="{Binding CreateAnotherCommand}" />
+                    <Button Content="Создать ещё одно поступление" Command="{Binding CreateAnotherCommand}" />
                 </StackPanel>
             </StackPanel>
         </Border>
@@ -33,7 +33,7 @@
                 <!-- ═══════════════════ Purchase Details ═══════════════════ -->
                 <Border BorderBrush="Gray" BorderThickness="1" Padding="12">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Общие данные закупки" FontWeight="Bold" FontSize="14" />
+                        <TextBlock Text="Общие данные поступления" FontWeight="Bold" FontSize="14" />
                         <StackPanel Orientation="Horizontal" Spacing="16">
                             <StackPanel Spacing="4">
                                 <TextBlock Text="Дата покупки" FontSize="11" />
@@ -48,12 +48,15 @@
                             </StackPanel>
                             <StackPanel Spacing="4">
                                 <TextBlock Text="Тип источника" FontSize="11" />
-                                <TextBox Text="{Binding SourceType}" Width="140" />
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBox Text="{Binding SourceType}" Width="140" Watermark="Введите вручную" />
+                                    <Button Content="Поставщик..." Command="{Binding OpenSupplierPickerCommand}" />
+                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="16">
                             <StackPanel Spacing="4">
-                                <TextBlock Text="Тип закупки" FontSize="11" />
+                                <TextBlock Text="Тип поступления" FontSize="11" />
                                 <ComboBox ItemsSource="{Binding PurchaseTypeOptions}" SelectedItem="{Binding PurchaseType}" Width="160" />
                             </StackPanel>
                             <StackPanel Spacing="4">
@@ -165,7 +168,7 @@
                 <!-- ═══════════════════ Items in Purchase ═══════════════════ -->
                 <Border BorderBrush="Gray" BorderThickness="1" Padding="12">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Товары в закупке" FontWeight="Bold" FontSize="14" />
+                        <TextBlock Text="Товары в поступлении" FontWeight="Bold" FontSize="14" />
                         <DataGrid ItemsSource="{Binding ItemLines}" SelectedItem="{Binding SelectedItemLine}"
                                   AutoGenerateColumns="False" IsReadOnly="False" GridLinesVisibility="All" Height="260">
                             <DataGrid.Columns>
@@ -179,9 +182,37 @@
                                 <DataGridTextColumn Header="Final Cost Basis" Binding="{Binding FinalLineCostBasis, StringFormat={}{0:C}}" Width="110" IsReadOnly="True" />
                                 <DataGridTextColumn Header="Manual Tax" Binding="{Binding ManualAllocatedSalesTaxText}" Width="90" />
                                 <DataGridTextColumn Header="Manual Exp." Binding="{Binding ManualAllocatedExpensesText}" Width="90" />
-                                <DataGridTextColumn Header="Item #" Binding="{Binding ItemNumbersText}" Width="120" IsReadOnly="True" />
+                                <DataGridTemplateColumn Header="Item #" Width="140">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:PurchaseLineEditViewModel">
+                                            <ItemsControl ItemsSource="{Binding CreatedItems}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="dto:PurchaseLineItemRefDto">
+                                                        <Button Classes="cell-link" Margin="0,0,4,0"
+                                                                Command="{Binding $parent[UserControl].((vm:PurchaseEditViewModel)DataContext).OpenItemCardCommand}"
+                                                                CommandParameter="{Binding}">
+                                                            <TextBlock Text="{Binding ItemNumber, StringFormat='#{0}'}" />
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="Заметки" Binding="{Binding Notes}" Width="140" />
                             </DataGrid.Columns>
+                            <DataGrid.Styles>
+                                <Style Selector="Button.cell-link">
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="Padding" Value="2" />
+                                </Style>
+                            </DataGrid.Styles>
                         </DataGrid>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <Button Content="Добавить товар" Command="{Binding AddItemLineCommand}" />
@@ -203,7 +234,7 @@
                 <Border BorderBrush="Gray" BorderThickness="1" Padding="12">
                     <StackPanel Spacing="8">
                         <TextBlock Text="Документы" FontWeight="Bold" FontSize="14" />
-                        <TextBlock Text="Сохраните закупку, чтобы прикреплять файлы." FontSize="11" Foreground="Gray"
+                        <TextBlock Text="Сохраните поступление, чтобы прикреплять файлы." FontSize="11" Foreground="Gray"
                                    IsVisible="{Binding !CanManageDocuments}" />
                         <ItemsControl ItemsSource="{Binding Documents}" IsVisible="{Binding CanManageDocuments}">
                             <ItemsControl.ItemTemplate>

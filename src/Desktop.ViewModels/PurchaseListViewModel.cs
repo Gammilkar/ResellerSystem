@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ResellerSystem.Desktop.Services.Api;
@@ -14,14 +15,29 @@ public sealed partial class PurchaseListViewModel : ViewModelBase
 {
     private readonly IServerApiClient _apiClient;
     private readonly INavigationService _navigation;
+    private readonly IDialogService _dialogService;
 
-    public PurchaseListViewModel(IServerApiClient apiClient, INavigationService navigation)
+    public PurchaseListViewModel(IServerApiClient apiClient, INavigationService navigation, IDialogService dialogService)
     {
         _apiClient = apiClient;
         _navigation = navigation;
+        _dialogService = dialogService;
+        SelectedRows.CollectionChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(HasSelection));
+            OnPropertyChanged(nameof(DeleteSelectedLabel));
+        };
     }
 
     public ObservableCollection<PurchaseListRowDto> Purchases { get; } = new();
+
+    /// <summary>Kept in sync by PurchaseListView's code-behind (DataGrid
+    /// SelectionChanged) since the grid's own multi-selection isn't
+    /// something a ViewModel can observe directly.</summary>
+    public ObservableCollection<PurchaseListRowDto> SelectedRows { get; } = new();
+
+    public bool HasSelection => SelectedRows.Count > 0;
+    public string DeleteSelectedLabel => SelectedRows.Count > 0 ? $"Удалить выбранные ({SelectedRows.Count})" : "Удалить выбранные";
 
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private string? _errorMessage;
@@ -78,6 +94,37 @@ public sealed partial class PurchaseListViewModel : ViewModelBase
 
     [RelayCommand]
     private void OpenPurchase(PurchaseListRowDto row) => _navigation.ShowPurchaseEdit(row.Id);
+
+    [RelayCommand]
+    private async Task DeleteSelectedAsync()
+    {
+        if (SelectedRows.Count == 0) return;
+
+        var confirmVm = new ConfirmDialogViewModel(
+            "Удалить выбранные поступления?",
+            $"Будет удалено поступлений: {SelectedRows.Count}. Связанные товары также будут удалены. Это действие нельзя отменить из интерфейса.",
+            confirmText: "Удалить");
+        var confirmed = await _dialogService.ShowAsync<ConfirmDialogViewModel, bool>(confirmVm);
+        if (!confirmed) return;
+
+        ErrorMessage = null;
+        var errors = new List<string>();
+        foreach (var row in SelectedRows.ToList())
+        {
+            try
+            {
+                await _apiClient.DeletePurchaseFullAsync(row.Id);
+            }
+            catch (ServerApiException ex)
+            {
+                errors.Add($"{row.PurchaseDate}: {ex.Error.Message}");
+            }
+        }
+        if (errors.Count > 0) ErrorMessage = string.Join(" | ", errors);
+
+        SelectedRows.Clear();
+        await LoadAsync();
+    }
 
     [RelayCommand]
     private void CreateNew() => _navigation.ShowPurchaseEdit(null);
