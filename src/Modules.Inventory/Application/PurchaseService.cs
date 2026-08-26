@@ -184,7 +184,6 @@ public sealed class PurchaseService : IPurchaseService
 
         purchase.SourceName = await ResolveSourceNameAsync(db, request.SourceName, request.SupplierId, ct);
         purchase.PurchaseDate = request.PurchaseDate;
-        purchase.SupplierId = request.SupplierId;
         purchase.PaymentMethod = request.PaymentMethod;
         purchase.Comment = request.Comment;
         purchase.PurchaseType = request.PurchaseType;
@@ -374,6 +373,7 @@ public sealed class PurchaseService : IPurchaseService
 
     private static void ApplyFullWorkflowFields(Purchase purchase, CreatePurchaseFullRequest request, PurchaseAllocationResult allocation)
     {
+        purchase.SupplierId = request.SupplierId;
         purchase.SourceType = request.SourceType;
         purchase.MerchandiseSubtotal = allocation.MerchandiseSubtotal;
         purchase.TaxableAmount = allocation.TaxableAmount;

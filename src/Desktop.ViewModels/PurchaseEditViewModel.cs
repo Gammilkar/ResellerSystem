@@ -336,10 +336,17 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
     {
         var dialogVm = new ItemCardDialogViewModel(itemRef.Id, _apiClient, _dialogService, _filePickerService);
         await _dialogService.ShowAsync<ItemCardDialogViewModel, bool>(dialogVm);
-        if (_purchaseId is { } id)
+        if (_purchaseId is not { } id) return;
+
+        ErrorMessage = null;
+        try
         {
             var detail = await _apiClient.GetPurchaseFullAsync(id);
             ApplyDetail(detail);
+        }
+        catch (ServerApiException ex)
+        {
+            ErrorMessage = ex.Error.Message;
         }
     }
 
