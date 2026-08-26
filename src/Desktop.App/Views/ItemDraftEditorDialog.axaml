@@ -1,0 +1,156 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ResellerSystem.Desktop.ViewModels"
+        x:Class="ResellerSystem.Desktop.App.Views.ItemDraftEditorDialog"
+        x:DataType="vm:ItemDraftEditorViewModel"
+        Title="Новый товар"
+        Width="600" Height="700"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True">
+    <DockPanel Margin="16">
+        <TextBlock DockPanel.Dock="Top" Text="Будет присвоен автоматически" FontSize="11" Foreground="Gray" Margin="0,0,0,8" />
+
+        <TextBlock DockPanel.Dock="Top" Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap"
+                   IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Margin="0,0,0,8" />
+
+        <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto" Margin="0,12,0,0">
+            <Button Grid.Column="1" Content="Cancel" Command="{Binding CancelCommand}" Margin="0,0,8,0" />
+            <Button Grid.Column="2" Content="{Binding ConfirmButtonLabel}" Command="{Binding ConfirmCommand}" />
+        </Grid>
+
+        <ScrollViewer>
+            <StackPanel Spacing="14">
+                <!-- ═══════════════════ Основное ═══════════════════ -->
+                <Border BorderBrush="Gray" BorderThickness="1" Padding="12">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Основное" FontWeight="Bold" FontSize="14" />
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Наименование" FontSize="11" />
+                            <TextBox Text="{Binding Line.ItemName}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Категория" FontSize="11" />
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <ComboBox ItemsSource="{Binding CategoryOptions}" SelectedItem="{Binding Line.CategoryName}" Width="180" />
+                                    <Button Content="+" Command="{Binding AddCategoryCommand}" ToolTip.Tip="Добавить новую категорию" />
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Количество" FontSize="11" />
+                                <NumericUpDown Value="{Binding Line.Quantity}" Minimum="1" Width="120"
+                                               ToolTip.Tip="Несколько одинаковых физических товаров — после сохранения каждый получит свой номер" />
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Заметки" FontSize="11" />
+                            <TextBox Text="{Binding Line.Notes}" AcceptsReturn="True" TextWrapping="Wrap" Height="60" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═══════════════════ Дополнительно ═══════════════════ -->
+                <Expander Header="Дополнительно" IsExpanded="False">
+                    <StackPanel Spacing="10" Margin="0,8,0,0">
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Brand / Производитель" FontSize="11" />
+                                <TextBox Text="{Binding Line.Brand}" Width="180" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Model" FontSize="11" />
+                                <TextBox Text="{Binding Line.Model}" Width="180" />
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Serial Number" FontSize="11" />
+                                <TextBox Text="{Binding Line.SerialNumber}" Width="180" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="SKU / Custom Label" FontSize="11" />
+                                <TextBox Text="{Binding Line.SkuCustomLabel}" Width="180" />
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Condition" FontSize="11" />
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <ComboBox ItemsSource="{Binding ConditionOptions}" SelectedItem="{Binding Line.Condition}" Width="150" />
+                                    <Button Content="+" Command="{Binding AddConditionCommand}" ToolTip.Tip="Добавить новое состояние" />
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Storage Location" FontSize="11" />
+                                <TextBox Text="{Binding Line.StorageLocation}" Width="180" Watermark="Garage A2" />
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Expander>
+
+                <!-- ═══════════════════ Закупочная стоимость ═══════════════════ -->
+                <Border BorderBrush="Gray" BorderThickness="1" Padding="12">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Закупочная стоимость" FontWeight="Bold" FontSize="14" />
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Цена за единицу" FontSize="11" />
+                                <NumericUpDown Value="{Binding Line.UnitPurchaseCost}" Minimum="0" FormatString="0.00" Width="140" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Сумма" FontSize="11" />
+                                <TextBlock Text="{Binding LineTotal, StringFormat={}{0:C}}" FontWeight="Bold" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═══════════════════ Данные закупки ═══════════════════ -->
+                <Border BorderBrush="Gray" BorderThickness="1" Padding="12">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Данные закупки" FontWeight="Bold" FontSize="14" />
+                        <TextBlock Text="{Binding Header.PurchaseDate, StringFormat='Дата покупки: {0}'}" FontSize="12" Foreground="Gray" />
+                        <TextBlock Text="{Binding Header.SourceName, StringFormat='Тип места покупки: {0}'}" FontSize="12" Foreground="Gray" />
+                        <TextBlock Text="{Binding Header.SourceType, StringFormat='Место покупки: {0}'}" FontSize="12" Foreground="Gray"
+                                   IsVisible="{Binding Header.SourceType, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                        <TextBlock Text="{Binding Header.PurchaseType, StringFormat='Тип: {0}'}" FontSize="12" Foreground="Gray" />
+                        <TextBlock Text="Reseller Permit" FontSize="12" Foreground="Gray" IsVisible="{Binding Header.UsedResellerPermit}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ═══════════════════ Себестоимость ═══════════════════ -->
+                <Expander Header="Себестоимость" IsExpanded="False">
+                    <StackPanel Spacing="6" Margin="0,8,0,0">
+                        <StackPanel IsVisible="{Binding HasCostPreview}" Spacing="4">
+                            <TextBlock Text="{Binding Line.AllocatedSalesTax, StringFormat='Налог: {0:C}'}" />
+                            <TextBlock Text="{Binding Line.AllocatedExpenses, StringFormat='Распределенные расходы: {0:C}'}" />
+                            <TextBlock Text="{Binding Line.FinalLineCostBasis, StringFormat='Итоговая себестоимость: {0:C}'}" FontWeight="Bold" />
+                        </StackPanel>
+                        <TextBlock Text="Будет рассчитано после добавления товара" FontStyle="Italic" Foreground="Gray"
+                                   IsVisible="{Binding !HasCostPreview}" />
+                    </StackPanel>
+                </Expander>
+
+                <!-- ═══════════════════ Документы ═══════════════════ -->
+                <Expander Header="Документы" IsExpanded="False">
+                    <StackPanel Spacing="8" Margin="0,8,0,0">
+                        <TextBlock Text="Файлы будут прикреплены к товару после сохранения поступления." FontSize="11" Foreground="Gray" TextWrapping="Wrap" />
+                        <ItemsControl ItemsSource="{Binding Line.StagedDocuments}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:StagedDocumentRef">
+                                    <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                                        <TextBlock Grid.Column="0" Text="{Binding DisplayName}" VerticalAlignment="Center" />
+                                        <Button Grid.Column="1" Content="Удалить"
+                                                Command="{Binding $parent[Window].((vm:ItemDraftEditorViewModel)DataContext).RemoveDocumentCommand}"
+                                                CommandParameter="{Binding}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Content="Добавить файл" Command="{Binding AddDocumentCommand}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </Expander>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

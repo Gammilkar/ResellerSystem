@@ -68,6 +68,12 @@ public sealed partial class ItemCardDialogViewModel : ViewModelBase
     /// as "leave alone"); it just leaves whatever was there.</summary>
     [ObservableProperty] private string _costBasisOverrideText = string.Empty;
     [ObservableProperty] private string? _notes;
+    [ObservableProperty] private string? _brand;
+    [ObservableProperty] private string? _model;
+    [ObservableProperty] private string? _serialNumber;
+    [ObservableProperty] private string? _skuCustomLabel;
+    [ObservableProperty] private string? _condition;
+    [ObservableProperty] private string? _storageLocation;
     [ObservableProperty] private string _createdInfo = "—";
     [ObservableProperty] private string _updatedInfo = "—";
 
@@ -76,6 +82,10 @@ public sealed partial class ItemCardDialogViewModel : ViewModelBase
     /// CategoryOptions) — a category added on either screen shows up on
     /// both.</summary>
     public ObservableCollection<string> CategoryOptions { get; } = new();
+
+    /// <summary>Same ReferenceListValue("Condition") list the Purchase
+    /// screen's Item Draft Editor reads from.</summary>
+    public ObservableCollection<string> ConditionOptions { get; } = new();
 
     // ── Закупка ───────────────────────────────────────────────────────
     private PurchaseDto? _purchase;
@@ -219,6 +229,12 @@ public sealed partial class ItemCardDialogViewModel : ViewModelBase
             EffectiveCostBasis = item.EffectiveCostBasis;
             CostBasisOverrideText = item.CostBasisOverride?.ToString() ?? string.Empty;
             Notes = item.Notes;
+            Brand = item.Brand;
+            Model = item.Model;
+            SerialNumber = item.SerialNumber;
+            SkuCustomLabel = item.SkuCustomLabel;
+            Condition = item.Condition;
+            StorageLocation = item.StorageLocation;
         }
 
         var purchaseTask = item is not null
@@ -233,8 +249,9 @@ public sealed partial class ItemCardDialogViewModel : ViewModelBase
         var pdfsTask = TryLoadListAsync(() => _apiClient.ListDocumentsForEntityAsync("ItemPdf", _itemId), "PDF", errors);
         var otherDocsTask = TryLoadListAsync(() => _apiClient.ListDocumentsForEntityAsync("ItemOtherDocument", _itemId), "Другие документы", errors);
         var categoryOptionsTask = TryLoadListAsync(() => _apiClient.ListReferenceValuesAsync(ReferenceListKeysMirror.Category), "Категории", errors);
+        var conditionOptionsTask = TryLoadListAsync(() => _apiClient.ListReferenceValuesAsync(ReferenceListKeysMirror.Condition), "Состояния", errors);
 
-        await Task.WhenAll(purchaseTask, listingsTask, salesTask, returnsTask, expensesTask, photosTask, receiptsTask, pdfsTask, otherDocsTask, categoryOptionsTask);
+        await Task.WhenAll(purchaseTask, listingsTask, salesTask, returnsTask, expensesTask, photosTask, receiptsTask, pdfsTask, otherDocsTask, categoryOptionsTask, conditionOptionsTask);
 
         _purchase = purchaseTask.Result;
         if (_purchase is not null)
@@ -273,6 +290,8 @@ public sealed partial class ItemCardDialogViewModel : ViewModelBase
 
         CategoryOptions.Clear();
         foreach (var c in categoryOptionsTask.Result) CategoryOptions.Add(c.Value);
+        ConditionOptions.Clear();
+        foreach (var c in conditionOptionsTask.Result) ConditionOptions.Add(c.Value);
 
         // Preserve the user's selection across a reload when possible;
         // otherwise fall back to the most recent listing/sale.
@@ -367,9 +386,39 @@ public sealed partial class ItemCardDialogViewModel : ViewModelBase
                 CategoryName = CategoryName,
                 Status = Status,
                 CostBasisOverride = costBasisOverride,
-                Notes = Notes
+                Notes = Notes,
+                Brand = Brand,
+                Model = Model,
+                SerialNumber = SerialNumber,
+                SkuCustomLabel = SkuCustomLabel,
+                Condition = Condition,
+                StorageLocation = StorageLocation
             });
             await LoadAsync();
+        }
+        catch (ServerApiException ex)
+        {
+            ErrorMessage = ex.Error.Message;
+        }
+    }
+
+    [RelayCommand]
+    private async Task AddConditionAsync()
+    {
+        var dialogVm = new TextInputDialogViewModel("Новое состояние", "Введите новое значение:");
+        var value = await _dialogService.ShowAsync<TextInputDialogViewModel, string>(dialogVm);
+        if (string.IsNullOrWhiteSpace(value)) return;
+
+        ErrorMessage = null;
+        try
+        {
+            var created = await _apiClient.CreateReferenceValueAsync(new CreateReferenceListValueRequest
+            {
+                ListKey = ReferenceListKeysMirror.Condition,
+                Value = value
+            });
+            if (!ConditionOptions.Contains(created.Value)) ConditionOptions.Add(created.Value);
+            Condition = created.Value;
         }
         catch (ServerApiException ex)
         {

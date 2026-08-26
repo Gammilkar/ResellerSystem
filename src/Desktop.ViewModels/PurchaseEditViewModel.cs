@@ -125,6 +125,7 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
     public ObservableCollection<string> PurchaseTypeOptions { get; } = new();
     public ObservableCollection<string> PaymentMethodOptions { get; } = new();
     public ObservableCollection<string> CategoryOptions { get; } = new();
+    public ObservableCollection<string> ConditionOptions { get; } = new();
     public ObservableCollection<string> ExpenseTypeOptions { get; } = new();
     public string[] AllocationMethodOptions { get; } = { "Proportional", "EqualPerUnit", "Manual" };
 
@@ -183,6 +184,7 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
         await LoadOneListAsync(ReferenceListKeysMirror.PaymentMethod, PaymentMethodOptions);
         await LoadOneListAsync(ReferenceListKeysMirror.Category, CategoryOptions);
         await LoadOneListAsync(ReferenceListKeysMirror.ExpenseType, ExpenseTypeOptions);
+        await LoadOneListAsync(ReferenceListKeysMirror.Condition, ConditionOptions);
     }
 
     private async Task LoadOneListAsync(string listKey, ObservableCollection<string> target)
@@ -269,7 +271,13 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
                 LinePurchaseCost = l.LinePurchaseCost,
                 AllocatedSalesTax = l.AllocatedSalesTax,
                 AllocatedExpenses = l.AllocatedExpenses,
-                FinalLineCostBasis = l.FinalLineCostBasis
+                FinalLineCostBasis = l.FinalLineCostBasis,
+                Brand = l.Brand,
+                Model = l.Model,
+                SerialNumber = l.SerialNumber,
+                SkuCustomLabel = l.SkuCustomLabel,
+                Condition = l.Condition,
+                StorageLocation = l.StorageLocation
             };
             foreach (var itemRef in l.CreatedItems) line.CreatedItems.Add(itemRef);
             AttachLine(line);
@@ -352,8 +360,27 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
     }
 
     // ── Items grid ─────────────────────────────────────────────────────
+    private PurchaseHeaderSnapshot BuildHeaderSnapshot() => new(
+        PurchaseDateValue, SourceName, SourceType, PurchaseType, ShowResellerPermitBlock);
+
     [RelayCommand]
-    private void AddItemLine() => AttachLine(new PurchaseLineEditViewModel { Quantity = 1 });
+    private async Task AddItemLineAsync()
+    {
+        var line = new PurchaseLineEditViewModel { Quantity = 1 };
+        var dialogVm = new ItemDraftEditorViewModel(line, isNewLine: true, BuildHeaderSnapshot(),
+            _apiClient, _dialogService, _filePickerService, CategoryOptions, ConditionOptions);
+        var confirmed = await _dialogService.ShowAsync<ItemDraftEditorViewModel, bool>(dialogVm);
+        if (confirmed) AttachLine(line);
+    }
+
+    [RelayCommand]
+    private async Task EditItemLineAsync(PurchaseLineEditViewModel line)
+    {
+        var dialogVm = new ItemDraftEditorViewModel(line, isNewLine: false, BuildHeaderSnapshot(),
+            _apiClient, _dialogService, _filePickerService, CategoryOptions, ConditionOptions);
+        var confirmed = await _dialogService.ShowAsync<ItemDraftEditorViewModel, bool>(dialogVm);
+        if (confirmed) TriggerRecalculate();
+    }
 
     [RelayCommand]
     private void DuplicateLine()
@@ -429,7 +456,13 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
             UnitPurchaseCost = l.UnitPurchaseCost,
             ManualAllocatedSalesTax = ParseOrNull(l.ManualAllocatedSalesTaxText),
             ManualAllocatedExpenses = ParseOrNull(l.ManualAllocatedExpensesText),
-            Notes = l.Notes
+            Notes = l.Notes,
+            Brand = l.Brand,
+            Model = l.Model,
+            SerialNumber = l.SerialNumber,
+            SkuCustomLabel = l.SkuCustomLabel,
+            Condition = l.Condition,
+            StorageLocation = l.StorageLocation
         }).ToList();
 
         var expenseLines = ExpenseLines.Select(e => new PurchaseExpenseLineInput
@@ -622,6 +655,15 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
                 result = await _apiClient.CreatePurchaseFullAsync(createRequest);
             }
 
+            // Capture staged documents (picked before the physical Items
+            // existed) by position, before ApplyDetail rebuilds ItemLines
+            // from the server response. Line order is preserved end to end
+            // (request.ItemLines was built from this same ItemLines order,
+            // and the server returns lines ordered by LineNumber, which is
+            // assigned in that same order), matching how ApplyAllocationPreview
+            // already does positional Lines[i]/ItemLines[i] matching.
+            var stagedDocumentsByLine = ItemLines.Select(l => l.StagedDocuments.ToList()).ToList();
+
             _purchaseId = result.Id;
             IsNew = false;
             ScreenTitle = "Редактирование поступления";
@@ -631,6 +673,8 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
             SaveResultText = $"Поступление сохранено. Товаров создано: {itemNumbers.Count}\n" +
                               string.Join("\n", itemNumbers.Select(n => $"#{n}"));
             ShowSaveResult = true;
+
+            await UploadStagedDocumentsAsync(stagedDocumentsByLine, result.ItemLines);
         }
         catch (ServerApiException ex)
         {
@@ -640,6 +684,40 @@ public sealed partial class PurchaseEditViewModel : ViewModelBase
         {
             IsSaving = false;
         }
+    }
+
+    /// <summary>Uploads and links every file staged in the Item Draft
+    /// Editor (before the real Items existed) to every physical Item its
+    /// line produced — a batch photo/receipt on a Quantity>1 line applies
+    /// to the whole batch, not arbitrarily to just one unit. A failure here
+    /// must not read as "the Purchase save failed" — the Purchase is
+    /// already committed by this point — so failures are aggregated into
+    /// ErrorMessage instead of thrown, matching InventoryViewModel.
+    /// DeleteSelectedAsync's existing per-item error aggregation pattern.</summary>
+    private async Task UploadStagedDocumentsAsync(
+        IReadOnlyList<List<StagedDocumentRef>> stagedDocumentsByLine, IReadOnlyList<PurchaseItemLineDto> resultLines)
+    {
+        var uploadErrors = new List<string>();
+        for (var i = 0; i < stagedDocumentsByLine.Count && i < resultLines.Count; i++)
+        {
+            if (stagedDocumentsByLine[i].Count == 0) continue;
+            foreach (var staged in stagedDocumentsByLine[i])
+            {
+                foreach (var createdItem in resultLines[i].CreatedItems)
+                {
+                    try
+                    {
+                        var document = await _apiClient.UploadDocumentAsync(staged.FilePath);
+                        await _apiClient.LinkDocumentAsync(document.Id, "Item", createdItem.Id);
+                    }
+                    catch (ServerApiException ex)
+                    {
+                        uploadErrors.Add($"{staged.DisplayName}: {ex.Error.Message}");
+                    }
+                }
+            }
+        }
+        if (uploadErrors.Count > 0) ErrorMessage = string.Join(" | ", uploadErrors);
     }
 
     // ── Documents ──────────────────────────────────────────────────────
@@ -762,4 +840,5 @@ internal static class ReferenceListKeysMirror
     public const string PaymentMethod = "PaymentMethod";
     public const string Category = "Category";
     public const string ExpenseType = "ExpenseType";
+    public const string Condition = "Condition";
 }

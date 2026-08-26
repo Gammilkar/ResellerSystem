@@ -51,6 +51,12 @@ public sealed class ItemDto
     public decimal? CostBasisOverride { get; init; }
     public required decimal EffectiveCostBasis { get; init; }
     public string? Notes { get; init; }
+    public string? Brand { get; init; }
+    public string? Model { get; init; }
+    public string? SerialNumber { get; init; }
+    public string? SkuCustomLabel { get; init; }
+    public string? Condition { get; init; }
+    public string? StorageLocation { get; init; }
     public required DateTimeOffset CreatedAt { get; init; }
 }
 
@@ -87,6 +93,12 @@ public sealed class UpdateItemRequest
     public string? Status { get; init; }
     public decimal? CostBasisOverride { get; init; }
     public string? Notes { get; init; }
+    public string? Brand { get; init; }
+    public string? Model { get; init; }
+    public string? SerialNumber { get; init; }
+    public string? SkuCustomLabel { get; init; }
+    public string? Condition { get; init; }
+    public string? StorageLocation { get; init; }
 }
 
 public sealed class UpdatePurchaseRequest

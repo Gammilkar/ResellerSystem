@@ -31,6 +31,12 @@ public sealed class PurchaseItemLineDto
     public decimal? ManualAllocatedExpenses { get; init; }
     public required decimal FinalLineCostBasis { get; init; }
     public string? Notes { get; init; }
+    public string? Brand { get; init; }
+    public string? Model { get; init; }
+    public string? SerialNumber { get; init; }
+    public string? SkuCustomLabel { get; init; }
+    public string? Condition { get; init; }
+    public string? StorageLocation { get; init; }
 
     /// <summary>The physical Items this line has created — empty for a
     /// not-yet-saved preview line. Carries Id (not just ItemNumber) so the
@@ -62,6 +68,12 @@ public sealed class PurchaseItemLineInput
     public decimal? ManualAllocatedSalesTax { get; init; }
     public decimal? ManualAllocatedExpenses { get; init; }
     public string? Notes { get; init; }
+    public string? Brand { get; init; }
+    public string? Model { get; init; }
+    public string? SerialNumber { get; init; }
+    public string? SkuCustomLabel { get; init; }
+    public string? Condition { get; init; }
+    public string? StorageLocation { get; init; }
 }
 
 public sealed class PurchaseExpenseLineDto

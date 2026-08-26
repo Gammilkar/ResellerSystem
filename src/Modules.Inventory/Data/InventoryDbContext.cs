@@ -76,6 +76,12 @@ public sealed class InventoryDbContext : DbContext
             entity.Property(e => e.CostBasisOverride).HasColumnName("cost_basis_override");
             entity.Ignore(e => e.EffectiveCostBasis);
             entity.Property(e => e.Notes).HasColumnName("notes");
+            entity.Property(e => e.Brand).HasColumnName("brand");
+            entity.Property(e => e.Model).HasColumnName("model");
+            entity.Property(e => e.SerialNumber).HasColumnName("serial_number");
+            entity.Property(e => e.SkuCustomLabel).HasColumnName("sku_custom_label");
+            entity.Property(e => e.Condition).HasColumnName("condition");
+            entity.Property(e => e.StorageLocation).HasColumnName("storage_location");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.CreatedBy).HasColumnName("created_by");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");

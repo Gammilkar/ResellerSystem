@@ -266,6 +266,12 @@ public sealed class InventoryService : IInventoryService
             item.CostBasisOverride = request.CostBasisOverride;
         }
         if (request.Notes is not null) { TrackChange("Notes", item.Notes, request.Notes); item.Notes = request.Notes; }
+        if (request.Brand is not null) { TrackChange("Brand", item.Brand, request.Brand); item.Brand = request.Brand; }
+        if (request.Model is not null) { TrackChange("Model", item.Model, request.Model); item.Model = request.Model; }
+        if (request.SerialNumber is not null) { TrackChange("SerialNumber", item.SerialNumber, request.SerialNumber); item.SerialNumber = request.SerialNumber; }
+        if (request.SkuCustomLabel is not null) { TrackChange("SkuCustomLabel", item.SkuCustomLabel, request.SkuCustomLabel); item.SkuCustomLabel = request.SkuCustomLabel; }
+        if (request.Condition is not null) { TrackChange("Condition", item.Condition, request.Condition); item.Condition = request.Condition; }
+        if (request.StorageLocation is not null) { TrackChange("StorageLocation", item.StorageLocation, request.StorageLocation); item.StorageLocation = request.StorageLocation; }
         item.Touch();
 
         await db.SaveChangesAsync(ct);
@@ -315,6 +321,12 @@ public sealed class InventoryService : IInventoryService
         CostBasisOverride = i.CostBasisOverride,
         EffectiveCostBasis = i.EffectiveCostBasis,
         Notes = i.Notes,
+        Brand = i.Brand,
+        Model = i.Model,
+        SerialNumber = i.SerialNumber,
+        SkuCustomLabel = i.SkuCustomLabel,
+        Condition = i.Condition,
+        StorageLocation = i.StorageLocation,
         CreatedAt = i.CreatedAt
     };
 }

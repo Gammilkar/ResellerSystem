@@ -21,6 +21,21 @@ public sealed partial class PurchaseLineEditViewModel : ObservableObject
     [ObservableProperty] private string? _manualAllocatedSalesTaxText;
     [ObservableProperty] private string? _manualAllocatedExpensesText;
 
+    // Descriptive fields collected in the Item Draft Editor — pure
+    // pass-through, applied to every physical Item this line explodes into.
+    [ObservableProperty] private string? _brand;
+    [ObservableProperty] private string? _model;
+    [ObservableProperty] private string? _serialNumber;
+    [ObservableProperty] private string? _skuCustomLabel;
+    [ObservableProperty] private string? _condition;
+    [ObservableProperty] private string? _storageLocation;
+
+    /// <summary>Files picked in the Item Draft Editor before this line's
+    /// physical Item(s) exist — uploaded and linked to every Item this line
+    /// creates only after the Purchase itself saves successfully (see
+    /// PurchaseEditViewModel.SaveInternalAsync).</summary>
+    public ObservableCollection<StagedDocumentRef> StagedDocuments { get; } = new();
+
     // Read-only, populated from the last preview/save response.
     [ObservableProperty] private decimal _linePurchaseCost;
     [ObservableProperty] private decimal _allocatedSalesTax;
@@ -49,8 +64,19 @@ public sealed partial class PurchaseLineEditViewModel : ObservableObject
         CategoryName = CategoryName,
         Quantity = Quantity,
         UnitPurchaseCost = UnitPurchaseCost,
-        Notes = Notes
-        // Id, allocation results, and CreatedItems deliberately not copied —
-        // Duplicate Line makes a new, not-yet-saved line.
+        Notes = Notes,
+        Brand = Brand,
+        Model = Model,
+        SerialNumber = SerialNumber,
+        SkuCustomLabel = SkuCustomLabel,
+        Condition = Condition,
+        StorageLocation = StorageLocation
+        // Id, allocation results, CreatedItems, and StagedDocuments
+        // deliberately not copied — Duplicate Line makes a new,
+        // not-yet-saved line with no runtime state of its own yet.
     };
 }
+
+/// <summary>A file picked for a not-yet-saved Item — just a local path
+/// until the Purchase saves and the real Item exists to link it to.</summary>
+public sealed record StagedDocumentRef(string FilePath, string DisplayName);

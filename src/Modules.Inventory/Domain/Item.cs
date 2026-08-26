@@ -43,6 +43,15 @@ public sealed class Item
 
     public string? Notes { get; set; }
 
+    // Descriptive fields collected at purchase-intake time — pure
+    // pass-through data, never touched by allocation math.
+    public string? Brand { get; set; }
+    public string? Model { get; set; }
+    public string? SerialNumber { get; set; }
+    public string? SkuCustomLabel { get; set; }
+    public string? Condition { get; set; }
+    public string? StorageLocation { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
     public string CreatedBy { get; set; } = "system";
     public DateTimeOffset UpdatedAt { get; set; }

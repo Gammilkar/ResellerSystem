@@ -101,4 +101,80 @@ public class PurchaseServiceCreateAsyncPostgresTests
         result.Subject.ItemLines.Sum(l => l.CreatedItems.Count).Should().Be(4);
         result.Subject.ItemLines.SelectMany(l => l.CreatedItems).Select(r => r.ItemNumber).Distinct().Should().HaveCount(4);
     }
+
+    [Fact]
+    public async Task CreateAsync_persists_the_new_descriptive_fields_onto_every_exploded_item()
+    {
+        var connectionString = await CreateMigratedTenantDatabaseAsync();
+        var dbContextFactory = new FixedConnectionStringDbContextFactory(connectionString);
+        var auditLogger = Substitute.For<IAuditLogger>();
+        var currentUser = Substitute.For<ICurrentUserContext>();
+        currentUser.DisplayName.Returns("tester");
+        var sut = new PurchaseService(dbContextFactory, auditLogger, currentUser);
+
+        var request = new CreatePurchaseFullRequest
+        {
+            PurchaseDate = DateOnly.FromDateTime(DateTime.Today),
+            SourceName = "Estate Sale",
+            PurchaseType = "TaxPaid",
+            ItemLines = new[]
+            {
+                new PurchaseItemLineInput
+                {
+                    ItemName = "Miele Filter", Quantity = 2, UnitPurchaseCost = 10m,
+                    Brand = "Miele", Model = "SF-AA50", SerialNumber = "SN-001",
+                    SkuCustomLabel = "SKU-42", Condition = "Used", StorageLocation = "Garage A2"
+                }
+            }
+        };
+
+        var result = await sut.CreateAsync(request);
+
+        await using var db = dbContextFactory.CreateForCurrentTenant();
+        var itemIds = result.ItemLines.Single().CreatedItems.Select(r => r.Id).ToList();
+        itemIds.Should().HaveCount(2);
+        var items = await db.Items.Where(i => itemIds.Contains(i.Id)).ToListAsync();
+        items.Should().HaveCount(2);
+        foreach (var item in items)
+        {
+            item.Brand.Should().Be("Miele");
+            item.Model.Should().Be("SF-AA50");
+            item.SerialNumber.Should().Be("SN-001");
+            item.SkuCustomLabel.Should().Be("SKU-42");
+            item.Condition.Should().Be("Used");
+            item.StorageLocation.Should().Be("Garage A2");
+        }
+    }
+
+    [Fact]
+    public async Task ToDetailDto_reflects_a_direct_Inventory_edit_to_an_items_category()
+    {
+        var connectionString = await CreateMigratedTenantDatabaseAsync();
+        var dbContextFactory = new FixedConnectionStringDbContextFactory(connectionString);
+        var auditLogger = Substitute.For<IAuditLogger>();
+        var currentUser = Substitute.For<ICurrentUserContext>();
+        currentUser.DisplayName.Returns("tester");
+        var sut = new PurchaseService(dbContextFactory, auditLogger, currentUser);
+
+        var created = await sut.CreateAsync(new CreatePurchaseFullRequest
+        {
+            PurchaseDate = DateOnly.FromDateTime(DateTime.Today),
+            SourceName = "Estate Sale",
+            PurchaseType = "TaxPaid",
+            ItemLines = new[] { new PurchaseItemLineInput { ItemName = "Vacuum", CategoryName = "Original Category", Quantity = 1, UnitPurchaseCost = 10m } }
+        });
+
+        // Simulate a direct edit made through Inventory (not through the Purchase screen).
+        await using (var db = dbContextFactory.CreateForCurrentTenant())
+        {
+            var itemId = created.ItemLines.Single().CreatedItems.Single().Id;
+            var item = await db.Items.SingleAsync(i => i.Id == itemId);
+            item.CategoryName = "Edited In Inventory";
+            await db.SaveChangesAsync();
+        }
+
+        var reloaded = await sut.GetAsync(created.Id);
+
+        reloaded.ItemLines.Single().CategoryName.Should().Be("Edited In Inventory");
+    }
 }

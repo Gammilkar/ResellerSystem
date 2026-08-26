@@ -86,6 +86,7 @@ public sealed class PurchaseService : IPurchaseService
             {
                 var item = Item.CreateNew(purchase.Id, input.ItemName, input.CategoryName, unitCostBasis, input.Notes);
                 item.PurchaseItemLineId = line.Id;
+                ApplyDescriptiveFields(item, input);
                 db.Items.Add(item);
                 auditEntries.Add(new AuditEntry("Item", item.Id, "Created", username, "manual"));
             }
@@ -265,6 +266,7 @@ public sealed class PurchaseService : IPurchaseService
                 {
                     var newItem = Item.CreateNew(purchase.Id, input.ItemName, input.CategoryName, 0m, input.Notes);
                     newItem.PurchaseItemLineId = line.Id;
+                    ApplyDescriptiveFields(newItem, input);
                     db.Items.Add(newItem);
                     lineItems.Add(newItem);
                     auditEntries.Add(new AuditEntry("Item", newItem.Id, "Created", username, "manual"));
@@ -283,6 +285,7 @@ public sealed class PurchaseService : IPurchaseService
             {
                 orderedForCostBasis[u].Name = input.ItemName;
                 orderedForCostBasis[u].CategoryName = input.CategoryName;
+                ApplyDescriptiveFields(orderedForCostBasis[u], input);
                 if (orderedForCostBasis[u].CostBasisCalculated != calc.UnitCostBases[u])
                 {
                     auditEntries.Add(new AuditEntry("Item", orderedForCostBasis[u].Id, "CostBasisRecalculated", username, "manual",
@@ -402,33 +405,64 @@ public sealed class PurchaseService : IPurchaseService
         line.FinalLineCostBasis = calc.FinalLineCostBasis;
     }
 
+    /// <summary>Descriptive fields collected at purchase-intake time —
+    /// pure pass-through, never touched by allocation math. Applied to
+    /// every physical Item a line explodes into, and re-applied on every
+    /// Update so editing them on an already-saved line's Item(s) sticks.</summary>
+    private static void ApplyDescriptiveFields(Item item, PurchaseItemLineInput input)
+    {
+        item.Brand = input.Brand;
+        item.Model = input.Model;
+        item.SerialNumber = input.SerialNumber;
+        item.SkuCustomLabel = input.SkuCustomLabel;
+        item.Condition = input.Condition;
+        item.StorageLocation = input.StorageLocation;
+    }
+
     private static PurchaseDetailDto ToDetailDto(Purchase p)
     {
         var itemsByLine = p.Items
             .Where(i => i.PurchaseItemLineId is not null)
             .GroupBy(i => i.PurchaseItemLineId!.Value)
-            .ToDictionary(g => g.Key, g => (IReadOnlyList<PurchaseLineItemRefDto>)g.OrderBy(i => i.ItemNumber)
-                .Select(i => new PurchaseLineItemRefDto { Id = i.Id, ItemNumber = i.ItemNumber })
-                .ToList());
+            .ToDictionary(g => g.Key, g => g.OrderBy(i => i.ItemNumber).ToList());
 
+        // Descriptive fields (Name/Category/Notes/Brand/Model/...) are
+        // sourced from the line's actual created Item(s) — the current,
+        // possibly-edited-directly-in-Inventory truth — rather than the
+        // PurchaseItemLine's own stored snapshot columns, so editing an
+        // Item's Category in Inventory shows up when the Purchase is
+        // reopened. Every persisted line always has >=1 Item (created
+        // atomically together), so the line-column fallback only guards
+        // against a defensive edge case that shouldn't occur.
         var lineDtos = p.ItemLines
             .OrderBy(l => l.LineNumber)
-            .Select(l => new PurchaseItemLineDto
+            .Select(l =>
             {
-                Id = l.Id,
-                LineNumber = l.LineNumber,
-                ItemName = l.ItemName,
-                CategoryName = l.CategoryName,
-                Quantity = l.Quantity,
-                UnitPurchaseCost = l.UnitPurchaseCost,
-                LinePurchaseCost = l.LinePurchaseCost,
-                AllocatedSalesTax = l.AllocatedSalesTax,
-                ManualAllocatedSalesTax = l.ManualAllocatedSalesTax,
-                AllocatedExpenses = l.AllocatedExpenses,
-                ManualAllocatedExpenses = l.ManualAllocatedExpenses,
-                FinalLineCostBasis = l.FinalLineCostBasis,
-                Notes = l.Notes,
-                CreatedItems = itemsByLine.TryGetValue(l.Id, out var refs) ? refs : Array.Empty<PurchaseLineItemRefDto>()
+                var items = itemsByLine.TryGetValue(l.Id, out var lineItems) ? lineItems : new List<Item>();
+                var representative = items.FirstOrDefault();
+                return new PurchaseItemLineDto
+                {
+                    Id = l.Id,
+                    LineNumber = l.LineNumber,
+                    ItemName = representative?.Name ?? l.ItemName,
+                    CategoryName = representative?.CategoryName ?? l.CategoryName,
+                    Quantity = l.Quantity,
+                    UnitPurchaseCost = l.UnitPurchaseCost,
+                    LinePurchaseCost = l.LinePurchaseCost,
+                    AllocatedSalesTax = l.AllocatedSalesTax,
+                    ManualAllocatedSalesTax = l.ManualAllocatedSalesTax,
+                    AllocatedExpenses = l.AllocatedExpenses,
+                    ManualAllocatedExpenses = l.ManualAllocatedExpenses,
+                    FinalLineCostBasis = l.FinalLineCostBasis,
+                    Notes = representative?.Notes ?? l.Notes,
+                    Brand = representative?.Brand,
+                    Model = representative?.Model,
+                    SerialNumber = representative?.SerialNumber,
+                    SkuCustomLabel = representative?.SkuCustomLabel,
+                    Condition = representative?.Condition,
+                    StorageLocation = representative?.StorageLocation,
+                    CreatedItems = items.Select(i => new PurchaseLineItemRefDto { Id = i.Id, ItemNumber = i.ItemNumber }).ToList()
+                };
             })
             .ToList();
 

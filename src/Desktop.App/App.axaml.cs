@@ -67,7 +67,8 @@ public sealed class App : Application
                 [typeof(SupplierEditDialogViewModel)] = () => new SupplierEditDialog(),
                 [typeof(SupplierPickerViewModel)] = () => new SupplierPickerDialog(),
                 [typeof(ConfirmDialogViewModel)] = () => new ConfirmDialog(),
-                [typeof(TextInputDialogViewModel)] = () => new TextInputDialog()
+                [typeof(TextInputDialogViewModel)] = () => new TextInputDialog(),
+                [typeof(ItemDraftEditorViewModel)] = () => new ItemDraftEditorDialog()
             },
             () => (Window)((IClassicDesktopStyleApplicationLifetime)ApplicationLifetime!).MainWindow!));
 

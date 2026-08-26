@@ -18,6 +18,7 @@ public static class ReferenceListKeys
     public const string PaymentMethod = "PaymentMethod";
     public const string Category = "Category";
     public const string ExpenseType = "ExpenseType";
+    public const string Condition = "Condition";
 }
 
 public sealed class ReferenceListValue

@@ -206,9 +206,9 @@
                 <Border BorderBrush="Gray" BorderThickness="1" Padding="12">
                     <StackPanel Spacing="10">
                         <TextBlock Text="Товары" FontWeight="Bold" FontSize="14" />
-                        <DataGrid ItemsSource="{Binding ItemLines}" SelectedItem="{Binding SelectedItemLine}"
-                                  AutoGenerateColumns="False" IsReadOnly="False" GridLinesVisibility="All" Height="280"
-                                  RowDetailsVisibilityMode="VisibleWhenSelected">
+                        <DataGrid x:Name="ItemsGrid" ItemsSource="{Binding ItemLines}" SelectedItem="{Binding SelectedItemLine}"
+                                  AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="All" Height="280"
+                                  RowDetailsVisibilityMode="VisibleWhenSelected" DoubleTapped="ItemsGrid_DoubleTapped">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Наименование" Binding="{Binding ItemName}" Width="160" />
                                 <DataGridTextColumn Header="Категория" Binding="{Binding CategoryName}" Width="120" />
@@ -271,6 +271,8 @@
                         </DataGrid>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <Button Content="Добавить товар" Command="{Binding AddItemLineCommand}" />
+                            <Button Content="Редактировать товар" Command="{Binding EditItemLineCommand}" CommandParameter="{Binding SelectedItemLine}"
+                                    IsEnabled="{Binding SelectedItemLine, Converter={x:Static ObjectConverters.IsNotNull}}" />
                             <Button Content="Дублировать строку" Command="{Binding DuplicateLineCommand}" />
                             <Button Content="Удалить строку" Command="{Binding RemoveLineCommand}" />
                         </StackPanel>

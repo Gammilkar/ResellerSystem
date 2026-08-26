@@ -61,6 +61,43 @@
                             <TextBlock Text="Заметки" FontSize="11" />
                             <TextBox Text="{Binding Notes}" AcceptsReturn="True" TextWrapping="Wrap" Height="70" />
                         </StackPanel>
+                        <Expander Header="Дополнительно" IsExpanded="False">
+                            <StackPanel Spacing="10" Margin="0,8,0,0">
+                                <StackPanel Orientation="Horizontal" Spacing="16">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Brand / Производитель" FontSize="11" />
+                                        <TextBox Text="{Binding Brand}" Width="180" />
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Model" FontSize="11" />
+                                        <TextBox Text="{Binding Model}" Width="180" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="16">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Serial Number" FontSize="11" />
+                                        <TextBox Text="{Binding SerialNumber}" Width="180" />
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="SKU / Custom Label" FontSize="11" />
+                                        <TextBox Text="{Binding SkuCustomLabel}" Width="180" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="16">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Condition" FontSize="11" />
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <ComboBox ItemsSource="{Binding ConditionOptions}" SelectedItem="{Binding Condition}" Width="150" />
+                                            <Button Content="+" Command="{Binding AddConditionCommand}" ToolTip.Tip="Добавить новое состояние" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Storage Location" FontSize="11" />
+                                        <TextBox Text="{Binding StorageLocation}" Width="180" Watermark="Garage A2" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </Expander>
                         <Button Content="Сохранить" Command="{Binding SaveItemCommand}" HorizontalAlignment="Left" />
                         <Separator Margin="0,8,0,0" />
                         <StackPanel Orientation="Horizontal" Spacing="24">
