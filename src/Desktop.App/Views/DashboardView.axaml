@@ -9,6 +9,7 @@
             <TextBlock Text="{Binding DatabaseName}" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" />
             <Button Content="Refresh" Command="{Binding LoadCommand}" />
             <Button Content="Open Inventory" Command="{Binding OpenInventoryCommand}" />
+            <Button Content="Закупки" Command="{Binding OpenPurchasesCommand}" />
             <Button Content="Поставщики" Command="{Binding OpenSuppliersCommand}" />
             <Button Content="Import" Command="{Binding OpenImportCommand}" />
             <Button Content="Change Database" Command="{Binding ChangeDatabaseCommand}" />

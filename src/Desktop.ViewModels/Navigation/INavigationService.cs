@@ -13,4 +13,6 @@ public interface INavigationService
     void ShowChangePassword();
     void ShowImport();
     void ShowSuppliers();
+    void ShowPurchaseList();
+    void ShowPurchaseEdit(Guid? purchaseId);
 }

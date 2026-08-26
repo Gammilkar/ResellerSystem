@@ -51,6 +51,8 @@ public sealed class App : Application
         services.AddTransient<ChangePasswordViewModel>();
         services.AddTransient<ImportViewModel>();
         services.AddTransient<SupplierListViewModel>();
+        services.AddTransient<PurchaseListViewModel>();
+        services.AddTransient<PurchaseEditViewModel>();
 
         services.AddSingleton<INavigationService, NavigationService>();
 
@@ -64,7 +66,8 @@ public sealed class App : Application
                 [typeof(DatePickerDialogViewModel)] = () => new DatePickerDialog(),
                 [typeof(SupplierEditDialogViewModel)] = () => new SupplierEditDialog(),
                 [typeof(SupplierPickerViewModel)] = () => new SupplierPickerDialog(),
-                [typeof(ConfirmDialogViewModel)] = () => new ConfirmDialog()
+                [typeof(ConfirmDialogViewModel)] = () => new ConfirmDialog(),
+                [typeof(TextInputDialogViewModel)] = () => new TextInputDialog()
             },
             () => (Window)((IClassicDesktopStyleApplicationLifetime)ApplicationLifetime!).MainWindow!));
 

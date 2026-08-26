@@ -1,0 +1,19 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ResellerSystem.Desktop.ViewModels"
+        x:Class="ResellerSystem.Desktop.App.Views.TextInputDialog"
+        x:DataType="vm:TextInputDialogViewModel"
+        Title="{Binding Title}"
+        Width="360" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <StackPanel Margin="20" Spacing="12">
+        <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="16" />
+        <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+        <TextBox Text="{Binding Value}" />
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Content="Отмена" Command="{Binding CancelCommand}" />
+            <Button Content="OK" Command="{Binding OkCommand}" />
+        </StackPanel>
+    </StackPanel>
+</Window>

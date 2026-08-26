@@ -141,6 +141,47 @@ public sealed class ServerApiClient : IServerApiClient
     public Task<IReadOnlyList<InventoryTableRowDto>> ListInventoryTableAsync(CancellationToken ct = default) =>
         SendAsync<IReadOnlyList<InventoryTableRowDto>>(HttpMethod.Get, "/api/v1/inventory/items/table", null, ct);
 
+    public Task<IReadOnlyList<PurchaseListRowDto>> ListPurchasesFullAsync(PurchaseListFilterRequest? filter = null, CancellationToken ct = default)
+    {
+        var query = new List<string>();
+        if (filter?.DateFrom is { } dateFrom) query.Add($"dateFrom={dateFrom:yyyy-MM-dd}");
+        if (filter?.DateTo is { } dateTo) query.Add($"dateTo={dateTo:yyyy-MM-dd}");
+        if (!string.IsNullOrWhiteSpace(filter?.SourceName)) query.Add($"sourceName={Uri.EscapeDataString(filter.SourceName)}");
+        if (!string.IsNullOrWhiteSpace(filter?.PurchaseType)) query.Add($"purchaseType={Uri.EscapeDataString(filter.PurchaseType)}");
+        if (filter?.UsedResellerPermit is { } permit) query.Add($"usedResellerPermit={permit}");
+        if (!string.IsNullOrWhiteSpace(filter?.PaymentMethod)) query.Add($"paymentMethod={Uri.EscapeDataString(filter.PaymentMethod)}");
+        if (filter?.MinTotalAmount is { } min) query.Add($"minTotalAmount={min}");
+        if (filter?.MaxTotalAmount is { } max) query.Add($"maxTotalAmount={max}");
+        if (!string.IsNullOrWhiteSpace(filter?.Search)) query.Add($"search={Uri.EscapeDataString(filter.Search)}");
+
+        var path = "/api/v1/inventory/purchases/full" + (query.Count > 0 ? "?" + string.Join("&", query) : string.Empty);
+        return SendAsync<IReadOnlyList<PurchaseListRowDto>>(HttpMethod.Get, path, null, ct);
+    }
+
+    public Task<PurchaseDetailDto> GetPurchaseFullAsync(Guid id, CancellationToken ct = default) =>
+        SendAsync<PurchaseDetailDto>(HttpMethod.Get, $"/api/v1/inventory/purchases/full/{id}", null, ct);
+
+    public Task<PurchaseDetailDto> CreatePurchaseFullAsync(CreatePurchaseFullRequest request, CancellationToken ct = default) =>
+        SendAsync<PurchaseDetailDto>(HttpMethod.Post, "/api/v1/inventory/purchases/full", request, ct);
+
+    public Task<PurchaseDetailDto> UpdatePurchaseFullAsync(Guid id, UpdatePurchaseFullRequest request, CancellationToken ct = default) =>
+        SendAsync<PurchaseDetailDto>(HttpMethod.Patch, $"/api/v1/inventory/purchases/full/{id}", request, ct);
+
+    public Task DeletePurchaseFullAsync(Guid id, CancellationToken ct = default) =>
+        SendNoContentAsync(HttpMethod.Delete, $"/api/v1/inventory/purchases/full/{id}", null, ct);
+
+    public Task<PurchaseAllocationResult> PreviewPurchaseAllocationAsync(PurchaseAllocationPreviewRequest request, CancellationToken ct = default) =>
+        SendAsync<PurchaseAllocationResult>(HttpMethod.Post, "/api/v1/inventory/purchases/full/preview-allocation", request, ct);
+
+    public Task<IReadOnlyList<ReferenceListValueDto>> ListReferenceValuesAsync(string listKey, CancellationToken ct = default) =>
+        SendAsync<IReadOnlyList<ReferenceListValueDto>>(HttpMethod.Get, $"/api/v1/inventory/reference-lists/{Uri.EscapeDataString(listKey)}", null, ct);
+
+    public Task<ReferenceListValueDto> CreateReferenceValueAsync(CreateReferenceListValueRequest request, CancellationToken ct = default) =>
+        SendAsync<ReferenceListValueDto>(HttpMethod.Post, "/api/v1/inventory/reference-lists", request, ct);
+
+    public Task DeleteReferenceValueAsync(Guid id, CancellationToken ct = default) =>
+        SendNoContentAsync(HttpMethod.Delete, $"/api/v1/inventory/reference-lists/{id}", null, ct);
+
     public Task<IReadOnlyList<ListingDto>> ListListingsAsync(Guid? itemId = null, CancellationToken ct = default) =>
         SendAsync<IReadOnlyList<ListingDto>>(HttpMethod.Get,
             itemId is null ? "/api/v1/sales/listings" : $"/api/v1/sales/listings?itemId={itemId}", null, ct);

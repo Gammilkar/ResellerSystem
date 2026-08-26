@@ -129,3 +129,89 @@ public sealed class SuppliersController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<SupplierPurchaseHistoryRowDto>>> GetPurchaseHistory(Guid id, CancellationToken ct) =>
         Ok(await _service.GetPurchaseHistoryAsync(id, ct));
 }
+
+/// <summary>The full purchase-intake workflow (Product Specification
+/// §1-24) — multi-line, allocation-aware. Deliberately routed under
+/// "purchases/full" rather than reusing PurchasesController's routes:
+/// that controller's GET/POST/PATCH on "api/v1/inventory/purchases" back
+/// the older single-item quick-entry form (still used by the grid and
+/// Import) and keep their existing shape untouched for backward
+/// compatibility — this is a parallel, richer resource, not a
+/// replacement.</summary>
+[ApiController]
+[Authorize]
+[Route("api/v1/inventory/purchases/full")]
+public sealed class PurchasesFullController : ControllerBase
+{
+    private readonly IPurchaseService _service;
+
+    public PurchasesFullController(IPurchaseService service)
+    {
+        _service = service;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<PurchaseListRowDto>>> List([FromQuery] PurchaseListFilterRequest filter, CancellationToken ct) =>
+        Ok(await _service.ListAsync(filter, ct));
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<PurchaseDetailDto>> Get(Guid id, CancellationToken ct) =>
+        Ok(await _service.GetAsync(id, ct));
+
+    [HttpPost]
+    public async Task<ActionResult<PurchaseDetailDto>> Create([FromBody] CreatePurchaseFullRequest request, CancellationToken ct)
+    {
+        var created = await _service.CreateAsync(request, ct);
+        return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
+    }
+
+    [HttpPatch("{id:guid}")]
+    public async Task<ActionResult<PurchaseDetailDto>> Update(Guid id, [FromBody] UpdatePurchaseFullRequest request, CancellationToken ct) =>
+        Ok(await _service.UpdateAsync(id, request, ct));
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+    {
+        await _service.DeleteAsync(id, ct);
+        return NoContent();
+    }
+
+    [HttpPost("preview-allocation")]
+    public ActionResult<PurchaseAllocationResult> PreviewAllocation([FromBody] PurchaseAllocationPreviewRequest request) =>
+        Ok(_service.PreviewAllocation(request));
+}
+
+/// <summary>Product Specification §76's "справочник-конструктор" — one
+/// generic reference-list CRUD surface for every picklist this module
+/// needs (Purchase Source, Purchase Type, Payment Method, Category,
+/// Expense Type; see ReferenceListKeys).</summary>
+[ApiController]
+[Authorize]
+[Route("api/v1/inventory/reference-lists")]
+public sealed class ReferenceListsController : ControllerBase
+{
+    private readonly IReferenceListService _service;
+
+    public ReferenceListsController(IReferenceListService service)
+    {
+        _service = service;
+    }
+
+    [HttpGet("{listKey}")]
+    public async Task<ActionResult<IReadOnlyList<ReferenceListValueDto>>> List(string listKey, CancellationToken ct) =>
+        Ok(await _service.ListAsync(listKey, ct));
+
+    [HttpPost]
+    public async Task<ActionResult<ReferenceListValueDto>> Create([FromBody] CreateReferenceListValueRequest request, CancellationToken ct)
+    {
+        var created = await _service.CreateAsync(request, ct);
+        return CreatedAtAction(nameof(List), new { listKey = created.ListKey }, created);
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+    {
+        await _service.DeleteAsync(id, ct);
+        return NoContent();
+    }
+}

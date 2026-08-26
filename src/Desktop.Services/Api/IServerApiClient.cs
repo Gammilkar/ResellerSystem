@@ -59,6 +59,19 @@ public interface IServerApiClient
     Task DeleteItemAsync(Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<InventoryTableRowDto>> ListInventoryTableAsync(CancellationToken ct = default);
 
+    // Full purchase-intake workflow — separate from the quick-entry
+    // Create/GetPurchaseAsync above, which stay untouched.
+    Task<IReadOnlyList<PurchaseListRowDto>> ListPurchasesFullAsync(PurchaseListFilterRequest? filter = null, CancellationToken ct = default);
+    Task<PurchaseDetailDto> GetPurchaseFullAsync(Guid id, CancellationToken ct = default);
+    Task<PurchaseDetailDto> CreatePurchaseFullAsync(CreatePurchaseFullRequest request, CancellationToken ct = default);
+    Task<PurchaseDetailDto> UpdatePurchaseFullAsync(Guid id, UpdatePurchaseFullRequest request, CancellationToken ct = default);
+    Task DeletePurchaseFullAsync(Guid id, CancellationToken ct = default);
+    Task<PurchaseAllocationResult> PreviewPurchaseAllocationAsync(PurchaseAllocationPreviewRequest request, CancellationToken ct = default);
+
+    Task<IReadOnlyList<ReferenceListValueDto>> ListReferenceValuesAsync(string listKey, CancellationToken ct = default);
+    Task<ReferenceListValueDto> CreateReferenceValueAsync(CreateReferenceListValueRequest request, CancellationToken ct = default);
+    Task DeleteReferenceValueAsync(Guid id, CancellationToken ct = default);
+
     Task<IReadOnlyList<ListingDto>> ListListingsAsync(Guid? itemId = null, CancellationToken ct = default);
     Task<ListingDto> CreateListingAsync(CreateListingRequest request, CancellationToken ct = default);
     Task<ListingDto> UpdateListingAsync(Guid id, UpdateListingRequest request, CancellationToken ct = default);

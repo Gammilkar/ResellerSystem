@@ -58,11 +58,15 @@ public sealed class InventoryService : IInventoryService
 
         // Even split of cost across all requested units — Architecture Plan
         // v0.1 section 10: each physical unit is its own Item row.
-        var costPerItem = Math.Round(request.TotalAmount / request.Quantity, 2, MidpointRounding.AwayFromZero);
+        // MoneyAllocator guarantees the per-unit amounts sum back to
+        // TotalAmount exactly (largest-remainder method), unlike a plain
+        // Math.Round(TotalAmount/Quantity, ...) which silently leaves a
+        // shortfall whenever the division doesn't come out even.
+        var costPerItem = MoneyAllocator.AllocateExact(request.TotalAmount, Enumerable.Repeat(1m, request.Quantity).ToArray());
         var items = new List<Item>();
         for (var i = 0; i < request.Quantity; i++)
         {
-            var item = Item.CreateNew(purchase.Id, request.ItemName, request.CategoryName, costPerItem, null);
+            var item = Item.CreateNew(purchase.Id, request.ItemName, request.CategoryName, costPerItem[i], null);
             db.Items.Add(item);
             items.Add(item);
         }

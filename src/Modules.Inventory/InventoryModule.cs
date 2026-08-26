@@ -17,7 +17,7 @@ public sealed class InventoryModule : IResellerModule
 {
     public string ModuleKey => "inventory";
     public string DisplayName => "Inventory";
-    public string Version => "0.2.0";
+    public string Version => "0.3.0";
     public string MinimumCoreVersion => "0.1.0";
 
     public Assembly MigrationsAssembly => Assembly.GetExecutingAssembly();
@@ -28,6 +28,8 @@ public sealed class InventoryModule : IResellerModule
         services.AddScoped<IInventoryDbContextFactory, InventoryDbContextFactory>();
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<ISupplierService, SupplierService>();
+        services.AddScoped<IPurchaseService, PurchaseService>();
+        services.AddScoped<IReferenceListService, ReferenceListService>();
         services.AddScoped<IInventoryTableReader, InventoryTableReader>();
 
         // Controllers in this assembly (Api/InventoryControllers.cs) are

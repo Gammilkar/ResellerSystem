@@ -65,6 +65,24 @@ public sealed class NavigationService : INavigationService
         _ = vm.LoadCommand.ExecuteAsync(null);
     }
 
+    public void ShowPurchaseList()
+    {
+        SetDatabaseIdFromSession();
+
+        var vm = _services.GetRequiredService<PurchaseListViewModel>();
+        SetCurrent(vm);
+        _ = vm.LoadCommand.ExecuteAsync(null);
+    }
+
+    public void ShowPurchaseEdit(Guid? purchaseId)
+    {
+        SetDatabaseIdFromSession();
+
+        var vm = _services.GetRequiredService<PurchaseEditViewModel>();
+        SetCurrent(vm);
+        vm.Initialize(purchaseId);
+    }
+
     // Every screen scoped to a selected tenant database (Dashboard,
     // Inventory, and future Sales/Returns/Listings/... screens) needs
     // X-Database-Id attached before it calls the API — set it here rather

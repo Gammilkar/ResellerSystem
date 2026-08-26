@@ -23,6 +23,12 @@ public sealed class Item
     public Guid Id { get; private set; }
     public long ItemNumber { get; private set; }
     public Guid PurchaseId { get; private set; }
+
+    /// <summary>Set only when this Item was created through the full
+    /// purchase-intake workflow (PurchaseService.CreateAsync) — null for
+    /// Items created via the older quick-entry/import paths, which have no
+    /// line concept.</summary>
+    public Guid? PurchaseItemLineId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? CategoryName { get; set; }
     public string Status { get; set; } = ItemStatuses.Purchased;
@@ -67,4 +73,12 @@ public sealed class Item
     public void Touch() => UpdatedAt = DateTimeOffset.UtcNow;
 
     public void SoftDelete() => DeletedAt = DateTimeOffset.UtcNow;
+
+    /// <summary>Used when a line's Quantity changes on Purchase update and
+    /// surviving units get re-run through the allocator for the new count —
+    /// never called for a reason other than "the line's own total split
+    /// differently," so it's a distinct, explicit method rather than a
+    /// public setter that could be mistaken for a manual correction (that's
+    /// what CostBasisOverride is for).</summary>
+    public void SetCalculatedCostBasis(decimal value) => CostBasisCalculated = value;
 }
