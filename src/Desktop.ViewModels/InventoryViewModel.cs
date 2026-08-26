@@ -50,6 +50,12 @@ public sealed partial class InventoryViewModel : ViewModelBase
 
     public ObservableCollection<InventoryTableRowDto> TableRows { get; } = new();
 
+    /// <summary>Column-key → pixel width, kept in sync live by
+    /// InventoryView's code-behind (which listens to each
+    /// DataGridColumn.Width change) and persisted the same way as font
+    /// size/column visibility.</summary>
+    public Dictionary<string, double> ColumnWidths { get; private set; } = new();
+
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private string? _errorMessage;
 
@@ -337,6 +343,8 @@ public sealed partial class InventoryViewModel : ViewModelBase
         ShowSaleMarketplaceColumn = Get(nameof(ShowSaleMarketplaceColumn), ShowSaleMarketplaceColumn);
         ShowSalePriceColumn = Get(nameof(ShowSalePriceColumn), ShowSalePriceColumn);
         ShowDaysListedColumn = Get(nameof(ShowDaysListedColumn), ShowDaysListedColumn);
+
+        if (saved.ColumnWidths is { } widths) ColumnWidths = new Dictionary<string, double>(widths);
     }
 
     private void SaveColumnSettings()
@@ -357,7 +365,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
             [nameof(ShowSalePriceColumn)] = ShowSalePriceColumn,
             [nameof(ShowDaysListedColumn)] = ShowDaysListedColumn
         };
-        _settingsStore.Save(TableKey, new TableSettings(DataFontSize, visibility, HeaderFontSize));
+        _settingsStore.Save(TableKey, new TableSettings(DataFontSize, visibility, HeaderFontSize, ColumnWidths));
     }
 
     [RelayCommand]

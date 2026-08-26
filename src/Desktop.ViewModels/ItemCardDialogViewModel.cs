@@ -742,5 +742,27 @@ public sealed partial class ItemCardDialogViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task DeleteItemAsync()
+    {
+        var confirmVm = new ConfirmDialogViewModel(
+            "Удалить товар?",
+            $"«{Name}» будет удалён из инвентаря. Это действие нельзя отменить из интерфейса.",
+            confirmText: "Удалить");
+        var confirmed = await _dialogService.ShowAsync<ConfirmDialogViewModel, bool>(confirmVm);
+        if (!confirmed) return;
+
+        ErrorMessage = null;
+        try
+        {
+            await _apiClient.DeleteItemAsync(_itemId);
+            RequestClose?.Invoke(true);
+        }
+        catch (ServerApiException ex)
+        {
+            ErrorMessage = ex.Error.Message;
+        }
+    }
+
+    [RelayCommand]
     private void Close() => RequestClose?.Invoke(true);
 }

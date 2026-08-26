@@ -83,7 +83,7 @@
             </StackPanel>
         </Border>
 
-        <DataGrid ItemsSource="{Binding TableRows}"
+        <DataGrid x:Name="MainGrid" ItemsSource="{Binding TableRows}"
                   AutoGenerateColumns="False"
                   CanUserResizeColumns="True"
                   CanUserReorderColumns="True"
@@ -278,7 +278,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Width="120" SortMemberPath="ListingMarketplace"
+                <DataGridTemplateColumn Width="190" SortMemberPath="ListingMarketplace"
                                         IsVisible="{Binding ShowMarketplaceColumn}">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
@@ -289,13 +289,24 @@
                     </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
-                            <AutoCompleteBox ItemsSource="{x:Static vm:MarketplaceOptions.Listing}"
-                                      Text="{Binding ListingMarketplace, Mode=OneWay}"
-                                      FilterMode="StartsWith"
-                                      MinimumPrefixLength="0"
-                                      LostFocus="ListingMarketplaceCombo_LostFocus"
-                                      FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}"
-                                      HorizontalAlignment="Stretch" />
+                            <StackPanel Orientation="Horizontal" Spacing="2">
+                                <!-- A real ComboBox (dropdown arrow, click to see
+                                     the full list) for the preset values, plus a
+                                     plain TextBox holding the actual/custom value —
+                                     Avalonia's ComboBox has no editable/free-text
+                                     mode, so picking a preset here just types it
+                                     into the TextBox next to it (see
+                                     ListingMarketplacePreset_SelectionChanged). -->
+                                <ComboBox ItemsSource="{x:Static vm:MarketplaceOptions.Listing}"
+                                          PlaceholderText="▾"
+                                          Width="46"
+                                          SelectionChanged="ListingMarketplacePreset_SelectionChanged"
+                                          FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}" />
+                                <TextBox Text="{Binding ListingMarketplace, Mode=OneWay}"
+                                         LostFocus="ListingMarketplaceCombo_LostFocus"
+                                         Width="130"
+                                         FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}" />
+                            </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -319,7 +330,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Width="130" SortMemberPath="SaleMarketplace"
+                <DataGridTemplateColumn Width="190" SortMemberPath="SaleMarketplace"
                                         IsVisible="{Binding ShowSaleMarketplaceColumn}">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
@@ -330,13 +341,17 @@
                     </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:InventoryTableRowDto">
-                            <AutoCompleteBox ItemsSource="{x:Static vm:MarketplaceOptions.Sale}"
-                                      Text="{Binding SaleMarketplace, Mode=OneWay}"
-                                      FilterMode="StartsWith"
-                                      MinimumPrefixLength="0"
-                                      LostFocus="SaleMarketplaceCombo_LostFocus"
-                                      FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}"
-                                      HorizontalAlignment="Stretch" />
+                            <StackPanel Orientation="Horizontal" Spacing="2">
+                                <ComboBox ItemsSource="{x:Static vm:MarketplaceOptions.Sale}"
+                                          PlaceholderText="▾"
+                                          Width="46"
+                                          SelectionChanged="SaleMarketplacePreset_SelectionChanged"
+                                          FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}" />
+                                <TextBox Text="{Binding SaleMarketplace, Mode=OneWay}"
+                                         LostFocus="SaleMarketplaceCombo_LostFocus"
+                                         Width="130"
+                                         FontSize="{Binding $parent[UserControl].((vm:InventoryViewModel)DataContext).DataFontSize}" />
+                            </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

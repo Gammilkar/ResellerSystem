@@ -63,7 +63,8 @@ public sealed class App : Application
                 [typeof(ItemCardDialogViewModel)] = () => new ItemCardDialog(),
                 [typeof(DatePickerDialogViewModel)] = () => new DatePickerDialog(),
                 [typeof(SupplierEditDialogViewModel)] = () => new SupplierEditDialog(),
-                [typeof(SupplierPickerViewModel)] = () => new SupplierPickerDialog()
+                [typeof(SupplierPickerViewModel)] = () => new SupplierPickerDialog(),
+                [typeof(ConfirmDialogViewModel)] = () => new ConfirmDialog()
             },
             () => (Window)((IClassicDesktopStyleApplicationLifetime)ApplicationLifetime!).MainWindow!));
 

@@ -14,7 +14,10 @@
         <TextBlock DockPanel.Dock="Top" Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap"
                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Margin="0,0,0,8" />
 
-        <Button DockPanel.Dock="Bottom" Content="Закрыть" Command="{Binding CloseCommand}" HorizontalAlignment="Right" Margin="0,8,0,0" />
+        <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,0">
+            <Button Grid.Column="0" Content="Удалить товар" Command="{Binding DeleteItemCommand}" Foreground="Red" />
+            <Button Grid.Column="2" Content="Закрыть" Command="{Binding CloseCommand}" />
+        </Grid>
 
         <TabControl>
             <!-- ═══════════════════════════ Основное ═══════════════════════════ -->

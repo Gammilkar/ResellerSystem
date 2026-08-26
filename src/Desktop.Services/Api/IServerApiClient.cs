@@ -56,6 +56,7 @@ public interface IServerApiClient
     Task<IReadOnlyList<ItemDto>> ListItemsAsync(string? status, CancellationToken ct = default);
     Task<ItemDto> GetItemAsync(Guid id, CancellationToken ct = default);
     Task<ItemDto> UpdateItemAsync(Guid id, UpdateItemRequest request, CancellationToken ct = default);
+    Task DeleteItemAsync(Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<InventoryTableRowDto>> ListInventoryTableAsync(CancellationToken ct = default);
 
     Task<IReadOnlyList<ListingDto>> ListListingsAsync(Guid? itemId = null, CancellationToken ct = default);
