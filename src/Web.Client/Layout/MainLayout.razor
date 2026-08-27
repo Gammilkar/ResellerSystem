@@ -1,0 +1,29 @@
+@inherits LayoutComponentBase
+@inject CircuitState Circuit
+@inject NavigationManager Nav
+
+<div class="app-shell">
+    @if (Circuit.IsAuthenticated && Circuit.HasDatabase)
+    {
+        <header class="topnav">
+            <span class="brand">ResellerSystem</span>
+            <nav>
+                <a href="dashboard">Dashboard</a>
+                <a href="inventory">Inventory</a>
+            </nav>
+            <span class="db-name">@Circuit.DatabaseName</span>
+            <button class="link-button" @onclick="SignOut">Выйти</button>
+        </header>
+    }
+    <main class="content">
+        @Body
+    </main>
+</div>
+
+@code {
+    private void SignOut()
+    {
+        Circuit.SignOut();
+        Nav.NavigateTo("/", forceLoad: true);
+    }
+}

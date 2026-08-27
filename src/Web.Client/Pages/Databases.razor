@@ -1,0 +1,59 @@
+@page "/databases"
+@inject ApiClient Api
+@inject CircuitState Circuit
+@inject NavigationManager Nav
+
+<h1>Выберите базу</h1>
+
+@if (ErrorMessage is not null)
+{
+    <p class="error">@ErrorMessage</p>
+}
+else if (DatabaseList is null)
+{
+    <p>Загрузка...</p>
+}
+else if (DatabaseList.Count == 0)
+{
+    <p>Нет доступных баз.</p>
+}
+else
+{
+    <ul class="db-list">
+        @foreach (var db in DatabaseList)
+        {
+            <li>
+                <button class="db-item" @onclick="() => Select(db)">@db.Name</button>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    private IReadOnlyList<DatabaseProfileDto>? DatabaseList;
+    private string? ErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Circuit.IsAuthenticated)
+        {
+            Nav.NavigateTo("/");
+            return;
+        }
+        try
+        {
+            DatabaseList = await Api.ListDatabasesAsync();
+        }
+        catch (ApiException ex)
+        {
+            ErrorMessage = ex.Error.Message;
+        }
+    }
+
+    private void Select(DatabaseProfileDto db)
+    {
+        Circuit.DatabaseId = db.Id;
+        Circuit.DatabaseName = db.Name;
+        Nav.NavigateTo("dashboard");
+    }
+}

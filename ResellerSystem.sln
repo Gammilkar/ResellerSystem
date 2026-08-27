@@ -61,6 +61,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Modules.Documents.Tests", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Modules.Dashboard.Tests", "tests\Modules.Dashboard.Tests\Modules.Dashboard.Tests.csproj", "{EF921B04-9E72-484C-9116-7E44176A8A44}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7C779B67-6D48-4C17-9090-E78FB6D86315}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Web.Client", "src\Web.Client\Web.Client.csproj", "{E0EFAF06-27DB-45B3-B200-18F3816FEC54}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -186,9 +190,14 @@ Global
 		{EF921B04-9E72-484C-9116-7E44176A8A44}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF921B04-9E72-484C-9116-7E44176A8A44}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF921B04-9E72-484C-9116-7E44176A8A44}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0EFAF06-27DB-45B3-B200-18F3816FEC54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0EFAF06-27DB-45B3-B200-18F3816FEC54}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0EFAF06-27DB-45B3-B200-18F3816FEC54}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0EFAF06-27DB-45B3-B200-18F3816FEC54}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{D26A80C5-9F50-466E-A90E-918889E7F4F3} = {A549C58D-22D2-45AA-B2F0-7836BFFCAFEC}
 		{EF921B04-9E72-484C-9116-7E44176A8A44} = {A549C58D-22D2-45AA-B2F0-7836BFFCAFEC}
+		{E0EFAF06-27DB-45B3-B200-18F3816FEC54} = {7C779B67-6D48-4C17-9090-E78FB6D86315}
 	EndGlobalSection
 EndGlobal

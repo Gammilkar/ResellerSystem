@@ -1,0 +1,121 @@
+@page "/inventory"
+@inject ApiClient Api
+@inject CircuitState Circuit
+@inject NavigationManager Nav
+
+<h1>Inventory</h1>
+
+@if (ErrorMessage is not null)
+{
+    <p class="error">@ErrorMessage</p>
+}
+
+@if (Rows is null)
+{
+    <p>Загрузка...</p>
+}
+else
+{
+    <div class="table-scroll">
+        <table class="grid">
+            <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Наименование</th>
+                    <th>Статус</th>
+                    <th>Себестоимость</th>
+                    <th>Дата покупки</th>
+                    <th>Источник</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Rows)
+                {
+                    <tr>
+                        <td>@row.ItemNumber</td>
+                        <td>@row.Name</td>
+                        <td>
+                            <select value="@row.Status" @onchange="e => UpdateStatusAsync(row, e.Value?.ToString())">
+                                @foreach (var status in StatusOptions)
+                                {
+                                    <option value="@status.Code" selected="@(status.Code == row.Status)">@status.Label</option>
+                                }
+                            </select>
+                        </td>
+                        <td>
+                            <input class="cost-input" type="number" step="0.01" value="@row.CostBasis"
+                                   @onchange="e => UpdateCostBasisAsync(row, e.Value?.ToString())" />
+                        </td>
+                        <td>@row.PurchaseDate.ToString("d")</td>
+                        <td>@row.PurchaseSourceName</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private IReadOnlyList<InventoryTableRowDto>? Rows;
+    private string? ErrorMessage;
+
+    // Same restricted quick-select set as the desktop Inventory grid's
+    // Status dropdown (Desktop.ViewModels/StatusOptions.cs) — kept in sync
+    // deliberately rather than exposing every ItemStatuses value here.
+    private static readonly (string Code, string Label)[] StatusOptions =
+    {
+        ("InStock", "на складе"),
+        ("Listed", "опубликован"),
+        ("Sold", "продан"),
+        ("Returned", "возврат")
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Circuit.IsAuthenticated) { Nav.NavigateTo("/"); return; }
+        if (!Circuit.HasDatabase) { Nav.NavigateTo("databases"); return; }
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            Rows = await Api.GetInventoryTableAsync();
+        }
+        catch (ApiException ex)
+        {
+            ErrorMessage = ex.Error.Message;
+        }
+    }
+
+    private async Task UpdateStatusAsync(InventoryTableRowDto row, string? newStatus)
+    {
+        if (string.IsNullOrEmpty(newStatus) || newStatus == row.Status) return;
+        ErrorMessage = null;
+        try
+        {
+            await Api.UpdateItemAsync(row.ItemId, new UpdateItemRequest { Status = newStatus });
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            ErrorMessage = ex.Error.Message;
+        }
+    }
+
+    private async Task UpdateCostBasisAsync(InventoryTableRowDto row, string? newValue)
+    {
+        if (!decimal.TryParse(newValue, out var parsed) || parsed == row.CostBasis) return;
+        ErrorMessage = null;
+        try
+        {
+            await Api.UpdateItemAsync(row.ItemId, new UpdateItemRequest { CostBasisOverride = parsed });
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            ErrorMessage = ex.Error.Message;
+        }
+    }
+}

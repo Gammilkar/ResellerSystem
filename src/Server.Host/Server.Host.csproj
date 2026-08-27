@@ -21,5 +21,6 @@
     <ProjectReference Include="..\Modules.Reports\Modules.Reports.csproj" />
     <ProjectReference Include="..\Modules.Dashboard\Modules.Dashboard.csproj" />
     <ProjectReference Include="..\Modules.Import\Modules.Import.csproj" />
+    <ProjectReference Include="..\Web.Client\Web.Client.csproj" />
   </ItemGroup>
 </Project>

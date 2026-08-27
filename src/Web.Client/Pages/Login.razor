@@ -1,0 +1,58 @@
+@page "/"
+@inject ApiClient Api
+@inject CircuitState Circuit
+@inject NavigationManager Nav
+
+<div class="login-box">
+    <h1>ResellerSystem</h1>
+    <EditForm Model="@this" OnValidSubmit="LoginAsync">
+        <div class="field">
+            <label>Логин</label>
+            <InputText @bind-Value="Username" />
+        </div>
+        <div class="field">
+            <label>Пароль</label>
+            <InputText @bind-Value="Password" type="password" />
+        </div>
+        @if (ErrorMessage is not null)
+        {
+            <p class="error">@ErrorMessage</p>
+        }
+        <button type="submit" disabled="@IsLoading">Войти</button>
+    </EditForm>
+</div>
+
+@code {
+    private string Username = string.Empty;
+    private string Password = string.Empty;
+    private bool IsLoading;
+    private string? ErrorMessage;
+
+    protected override void OnInitialized()
+    {
+        if (Circuit.IsAuthenticated)
+        {
+            Nav.NavigateTo(Circuit.HasDatabase ? "dashboard" : "databases");
+        }
+    }
+
+    private async Task LoginAsync()
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+        try
+        {
+            var result = await Api.LoginAsync(Username, Password);
+            Circuit.Token = result.Token;
+            Nav.NavigateTo("databases");
+        }
+        catch (ApiException ex)
+        {
+            ErrorMessage = ex.Error.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+}

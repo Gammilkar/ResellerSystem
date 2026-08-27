@@ -1,0 +1,62 @@
+@page "/dashboard"
+@inject ApiClient Api
+@inject CircuitState Circuit
+@inject NavigationManager Nav
+
+<h1>Dashboard</h1>
+
+@if (ErrorMessage is not null)
+{
+    <p class="error">@ErrorMessage</p>
+}
+else if (Summary is null)
+{
+    <p>Загрузка...</p>
+}
+else
+{
+    <div class="cards">
+        <div class="card">
+            <h3>Inventory</h3>
+            <p>На складе: @Summary.InventoryOnHandCount</p>
+            <p>Себестоимость: @Summary.InventoryOnHandCostBasis.ToString("C")</p>
+        </div>
+        <div class="card">
+            <h3>Profit</h3>
+            <p>Всего: @Summary.NetProfitAllTime.ToString("C")</p>
+            <p>За месяц: @Summary.NetProfitThisMonth.ToString("C")</p>
+            <p>За неделю: @Summary.NetProfitThisWeek.ToString("C")</p>
+        </div>
+        <div class="card">
+            <h3>Sales</h3>
+            <p>Продано всего: @Summary.ItemsSoldAllTime</p>
+            <p>За месяц: @Summary.ItemsSoldThisMonth</p>
+            <p>За неделю: @Summary.ItemsSoldThisWeek</p>
+        </div>
+        <div class="card">
+            <h3>Additional</h3>
+            <p>Валовые продажи: @Summary.GrossSalesAllTime.ToString("C")</p>
+            <p>Средний ROI: @(Summary.AverageRoiPercent?.ToString("0.##") ?? "—")%</p>
+            <p>Дней до продажи: @(Summary.AverageDaysToSell?.ToString("0.#") ?? "—")</p>
+        </div>
+    </div>
+}
+
+@code {
+    private DashboardSummaryDto? Summary;
+    private string? ErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Circuit.IsAuthenticated) { Nav.NavigateTo("/"); return; }
+        if (!Circuit.HasDatabase) { Nav.NavigateTo("databases"); return; }
+        try
+        {
+            Summary = await Api.GetDashboardSummaryAsync();
+        }
+        catch (ApiException ex)
+        {
+            ErrorMessage = ex.Error.Message;
+        }
+    }
+}
