@@ -106,9 +106,10 @@ public sealed class DashboardService : IDashboardService
                     (s.item_sale_price + s.buyer_paid_shipping + s.handling - s.seller_discount) AS gross,
                     COALESCE(ft.total_fees, 0) AS fees,
                     COALESCE(i.cost_basis_override, i.cost_basis_calculated, 0) AS cost_basis,
-                    i.created_at AS purchase_date
+                    p.purchase_date
                 FROM sales s
                 LEFT JOIN items i ON i.id = s.item_id
+                LEFT JOIN purchases p ON p.id = i.purchase_id
                 LEFT JOIN fee_totals ft ON ft.sale_id = s.id
                 WHERE s.deleted_at IS NULL
             )
@@ -120,7 +121,7 @@ public sealed class DashboardService : IDashboardService
                 COALESCE(SUM(gross - fees - cost_basis) FILTER (WHERE sale_date >= date_trunc('month', now())), 0) AS profit_month,
                 COALESCE(SUM(gross - fees - cost_basis) FILTER (WHERE sale_date >= date_trunc('week', now())), 0) AS profit_week,
                 COALESCE(SUM(gross), 0) AS gross_all_time,
-                AVG(EXTRACT(DAY FROM sale_date - purchase_date)) AS avg_days_to_sell,
+                AVG(sale_date - purchase_date) FILTER (WHERE purchase_date IS NOT NULL) AS avg_days_to_sell,
                 SUM(cost_basis) AS total_cost_basis_sold
             FROM sale_calc;
             """;
